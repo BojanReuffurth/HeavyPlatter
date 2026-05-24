@@ -80,3 +80,29 @@ struct RBRow<C: View>: View {
         }
     }
 }
+
+// MARK: – Mini vinyl record icon (replaces opticaldisc SF symbol)
+struct MiniVinylIcon: View {
+    var color: Color  = Color(hex: "#E8A87C")
+    var size:  CGFloat = 22
+    var body: some View {
+        ZStack {
+            // Vinyl body
+            Circle().fill(Color(hex: "#111111")).frame(width: size, height: size)
+            // Groove rings (5 rings)
+            ForEach(0 ..< 5, id: \.self) { i in
+                Circle()
+                    .stroke(Color.white.opacity(0.13), lineWidth: 0.6)
+                    .frame(width: size * (0.88 - CGFloat(i) * 0.13),
+                           height: size * (0.88 - CGFloat(i) * 0.13))
+            }
+            // Coloured label circle
+            Circle().fill(color)
+                .frame(width: size * 0.38, height: size * 0.38)
+            // Spindle hole
+            Circle().fill(Color(hex: "#111111"))
+                .frame(width: size * 0.09, height: size * 0.09)
+        }
+        .frame(width: size, height: size)
+    }
+}

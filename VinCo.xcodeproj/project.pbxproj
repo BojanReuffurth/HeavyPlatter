@@ -35,6 +35,7 @@
 		EFF0743D2FC329A8001D748E /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074192FC329A8001D748E /* StatsView.swift */; };
 		EFF0743E2FC329A8001D748E /* CollectionFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0740C2FC329A8001D748E /* CollectionFeature.swift */; };
 		EFF0743F2FC329A8001D748E /* EditFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074122FC329A8001D748E /* EditFeature.swift */; };
+		EFF074402FC329A8001D748E /* ColorExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074412FC329A8001D748E /* ColorExtractor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +67,7 @@
 		EFF074222FC329A8001D748E /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		EFF074232FC329A8001D748E /* VinylView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VinylView.swift; sourceTree = "<group>"; };
 		EFF074252FC329A8001D748E /* VinCoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VinCoApp.swift; sourceTree = "<group>"; };
+		EFF074412FC329A8001D748E /* ColorExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtractor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -219,6 +221,7 @@
 			children = (
 				EFF0741F2FC329A8001D748E /* AppearanceSetup.swift */,
 				EFF074202FC329A8001D748E /* Color+Hex.swift */,
+				EFF074412FC329A8001D748E /* ColorExtractor.swift */,
 				EFF074212FC329A8001D748E /* Settings.swift */,
 				EFF074222FC329A8001D748E /* Theme.swift */,
 				EFF074232FC329A8001D748E /* VinylView.swift */,
@@ -328,6 +331,7 @@
 				EFF0743D2FC329A8001D748E /* StatsView.swift in Sources */,
 				EFF0743E2FC329A8001D748E /* CollectionFeature.swift in Sources */,
 				EFF0743F2FC329A8001D748E /* EditFeature.swift in Sources */,
+				EFF074402FC329A8001D748E /* ColorExtractor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

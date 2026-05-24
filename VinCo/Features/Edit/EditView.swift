@@ -16,6 +16,7 @@ struct EditView: View {
                     discogsBlock
                     detailsBlock
                     pricingBlock
+                    tracklistBlock
                     colorBlock
                 }
                 .padding(16).padding(.bottom, 40)
@@ -43,6 +44,7 @@ struct EditView: View {
     }
 
     // MARK: – Cover block
+
     private var coverBlock: some View {
         RBSection {
             VStack(spacing: 14) {
@@ -166,6 +168,56 @@ struct EditView: View {
         }
     }
 
+    // MARK: – Tracklist block
+    private var tracklistBlock: some View {
+        RBSection("Tracklist") {
+            if store.fetchingTracks {
+                RBRow(divider: false) {
+                    HStack(spacing: 10) {
+                        ProgressView().tint(settings.accentColor)
+                        Text("Fetching tracks…")
+                            .font(.system(size: 13)).foregroundStyle(Theme.textS)
+                    }
+                }
+            } else if store.tracks.isEmpty {
+                RBRow(divider: false) {
+                    Button { store.send(.fetchTracksTapped) } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "list.bullet")
+                                .font(.system(size: 13))
+                            Text("Fetch Tracklist")
+                                .font(.system(size: 13))
+                        }
+                        .foregroundStyle(
+                            (store.artist.isEmpty && store.album.isEmpty)
+                                ? Theme.textT : settings.accentColor
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(store.artist.isEmpty && store.album.isEmpty)
+                }
+            } else {
+                ForEach(Array(store.tracks.enumerated()), id: \.element.id) { idx, track in
+                    RBRow(divider: idx < store.tracks.count - 1) {
+                        HStack(spacing: 8) {
+                            Text("\(track.number)")
+                                .font(.system(size: 11)).foregroundStyle(Theme.textT)
+                                .frame(width: 22, alignment: .trailing)
+                            Text(track.name)
+                                .font(.system(size: 13)).foregroundStyle(Theme.textP)
+                                .lineLimit(1)
+                            Spacer()
+                            if !track.durationStr.isEmpty {
+                                Text(track.durationStr)
+                                    .font(.system(size: 11)).foregroundStyle(Theme.textT)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: – Color block
     private var colorBlock: some View {
         RBSection("Vinyl Color") {
@@ -239,6 +291,7 @@ struct EditView: View {
         r.paidPrice    = Double(store.paidPrice)
         r.currentValue = Double(store.curValue)
         if let did = store.discogsId { r.discogsId = did }
+        if !store.tracks.isEmpty { r.tracks = store.tracks }
         dismiss()
     }
 }

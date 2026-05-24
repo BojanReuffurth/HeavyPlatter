@@ -305,6 +305,7 @@ struct FlipDetailCard: View {
     var onDismiss: () -> Void = {}
     @Environment(Settings.self) private var settings
     @State private var isFlipped = false
+    @State private var isFetchingTracks = false
 
     var body: some View {
         ZStack {
@@ -417,6 +418,60 @@ struct FlipDetailCard: View {
                         }
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         Rectangle().fill(Theme.divide).frame(height: 1)
+                    }
+
+                    // Tracklist
+                    if record.tracks.isEmpty {
+                        HStack {
+                            Button {
+                                let ar = record.artist, al = record.album
+                                isFetchingTracks = true
+                                Task { @MainActor in
+                                    let res = await iTunesClient.liveValue.fetch(ar, al)
+                                    if !res.tracks.isEmpty { record.tracks = res.tracks }
+                                    isFetchingTracks = false
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    if isFetchingTracks {
+                                        ProgressView().tint(settings.accentColor).scaleEffect(0.75)
+                                    } else {
+                                        Image(systemName: "list.bullet").font(.system(size: 12))
+                                    }
+                                    Text(isFetchingTracks ? "Fetching…" : "Get Tracklist")
+                                        .font(Theme.courier(11))
+                                }
+                                .foregroundStyle(settings.accentColor)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            Spacer()
+                        }
+                        Rectangle().fill(Theme.divide).frame(height: 1)
+                    } else {
+                        Text("TRACKLIST")
+                            .font(Theme.courier(9, .semibold))
+                            .foregroundStyle(Theme.textT)
+                            .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 2)
+                        ForEach(record.tracks) { track in
+                            VStack(spacing: 0) {
+                                HStack(spacing: 6) {
+                                    Text("\(track.number)")
+                                        .font(Theme.courier(9)).foregroundStyle(Theme.textT)
+                                        .frame(width: 18, alignment: .trailing)
+                                    Text(track.name)
+                                        .font(Theme.courier(11)).foregroundStyle(Theme.textS)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    if !track.durationStr.isEmpty {
+                                        Text(track.durationStr)
+                                            .font(Theme.courier(9)).foregroundStyle(Theme.textT)
+                                    }
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 5)
+                                Rectangle().fill(Theme.divide).frame(height: 1)
+                            }
+                        }
                     }
                 }
             }

@@ -50,18 +50,34 @@ struct AppView: View {
             HStack(spacing: 8) {
                 ZStack {
                     Circle().fill(settings.accentColor.opacity(0.15)).frame(width: 32, height: 32)
-                    Image(systemName: "opticaldisc.fill")
-                        .font(.system(size: 15)).foregroundStyle(settings.accentColor)
+                    MiniVinylIcon(color: settings.accentColor, size: 20)
                 }
                 Text("VinCo")
                     .font(Theme.courier(20, .bold)).foregroundStyle(Theme.textP)
             }
             Spacer()
 
-            // Collection-value mini badge (paid · value · ±gain)
+            // Collection-value mini badge (labels on top, values on bottom)
             if settings.pinnedStats.contains("value") {
                 collectionValueBadge
             }
+
+            // Spotify button
+            Button {
+                if let url = URL(string: "spotify:"), UIApplication.shared.canOpenURL(url) {
+                    UIApplication.shared.open(url)
+                } else if let url = URL(string: "https://open.spotify.com") {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                Image(systemName: "music.note")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color(hex: "#1DB954"))
+                    .frame(width: 34, height: 34)
+                    .background(Theme.bg2)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
 
             Button { showStats = true } label: {
                 Image(systemName: "chart.bar.fill")
@@ -91,25 +107,42 @@ struct AppView: View {
         let paid  = collectionRecords.compactMap(\.paidPrice).reduce(0, +)
         let value = collectionRecords.compactMap(\.currentValue).reduce(0, +)
         let gain  = paid > 0 ? ((value - paid) / paid) * 100 : 0.0
-        return HStack(spacing: 8) {
-            miniVal("PAID",  "\(settings.currency)\(Int(paid))",  Theme.textS)
-            Rectangle().fill(Theme.divide).frame(width: 1, height: 22)
-            miniVal("VAL",   "\(settings.currency)\(Int(value))", Theme.textS)
-            if paid > 0 {
-                Rectangle().fill(Theme.divide).frame(width: 1, height: 22)
-                miniVal("±", String(format: "%+.0f%%", gain), gain >= 0 ? .green : .red)
+        let paidStr = "\(settings.currency)\(Int(paid))"
+        let valStr  = "\(settings.currency)\(Int(value))"
+        let gainStr = String(format: "%+.0f%%", gain)
+        let gainCol: Color = gain >= 0 ? .green : .red
+        let showGain = paid > 0
+        return VStack(alignment: .leading, spacing: 2) {
+            // Top row — labels
+            HStack(spacing: 5) {
+                Text("PAID")
+                if showGain { Rectangle().fill(Theme.divide).frame(width: 1, height: 8) }
+                Text("VAL")
+                if showGain {
+                    Rectangle().fill(Theme.divide).frame(width: 1, height: 8)
+                    Text("±")
+                }
             }
+            .font(Theme.courier(7, .semibold))
+            .foregroundStyle(Theme.textT)
+            // Bottom row — values (fixed layout, no wrapping)
+            HStack(spacing: 5) {
+                Text(paidStr)
+                if showGain { Rectangle().fill(Theme.divide).frame(width: 1, height: 12) }
+                Text(valStr)
+                if showGain {
+                    Rectangle().fill(Theme.divide).frame(width: 1, height: 12)
+                    Text(gainStr).foregroundStyle(gainCol)
+                }
+            }
+            .font(Theme.courier(11, .bold))
+            .foregroundStyle(Theme.textS)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .background(Theme.bg2)
         .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
-    private func miniVal(_ label: String, _ value: String, _ color: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value).font(Theme.courier(12, .bold)).foregroundStyle(color)
-            Text(label).font(Theme.courier(8,  .semibold)).foregroundStyle(Theme.textT)
-        }
     }
 
     // MARK: – Bottom counts bar

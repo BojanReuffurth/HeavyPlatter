@@ -26,6 +26,9 @@ struct EditFeature {
         var fetchingArt: Bool = false
         // Price fetch
         var fetchingPrice: Bool = false
+        // Tracklist
+        var tracks: [Track] = []
+        var fetchingTracks: Bool = false
 
         var canSave:  Bool { !artist.trimmingCharacters(in: .whitespaces).isEmpty &&
                              !album.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -42,6 +45,8 @@ struct EditFeature {
         case fetchArtTapped
         case artReceived(Data?)
         case priceReceived(Double)
+        case fetchTracksTapped
+        case tracksReceived([Track])
         case saveTapped
         case cancelTapped
     }
@@ -60,6 +65,7 @@ struct EditFeature {
                 state.country = r.country; state.notes = r.notes; state.condition = r.condition
                 state.colorHex = r.colorHex; state.coverData = r.coverData
                 state.discogsId = r.discogsId
+                state.tracks = r.tracks
                 if let p = r.paidPrice    { state.paidPrice = String(format: "%.2f", p) }
                 if let v = r.currentValue { state.curValue  = String(format: "%.2f", v) }
                 return .none
@@ -92,10 +98,11 @@ struct EditFeature {
                 state.discogsId = r.id > 0 ? r.id : nil
                 state.results = []; state.query = ""
 
-                // Fetch art + market price in parallel
+                // Fetch art, market price, and tracklist in parallel
                 let rid = r.id
                 return .merge(
                     .send(.fetchArtTapped),
+                    .send(.fetchTracksTapped),
                     .run { send in
                         guard rid > 0 else { return }
                         let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
@@ -119,7 +126,13 @@ struct EditFeature {
                 }
 
             case .artReceived(let data):
-                state.coverData = data; state.fetchingArt = false; return .none
+                state.coverData = data
+                state.fetchingArt = false
+                // Auto-derive vinyl label colour from the cover art
+                if let data = data, let hex = ColorExtractor.dominant(from: data) {
+                    state.colorHex = hex
+                }
+                return .none
 
             case .priceReceived(let price):
                 // Only auto-fill if user hasn't entered a value yet
@@ -127,6 +140,19 @@ struct EditFeature {
                     state.curValue = String(format: "%.2f", price)
                 }
                 return .none
+
+            case .fetchTracksTapped:
+                guard !state.artist.isEmpty || !state.album.isEmpty else { return .none }
+                state.fetchingTracks = true
+                state.tracks = []
+                let ar = state.artist, al = state.album
+                return .run { send in
+                    let res = await iTunes.fetch(ar, al)
+                    await send(.tracksReceived(res.tracks))
+                }
+
+            case .tracksReceived(let tracks):
+                state.tracks = tracks; state.fetchingTracks = false; return .none
 
             case .saveTapped, .cancelTapped: return .none
             case .binding: return .none
