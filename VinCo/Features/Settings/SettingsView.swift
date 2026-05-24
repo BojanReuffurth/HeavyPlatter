@@ -33,6 +33,11 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .toolbarBackground(Theme.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CloseButton()
+                }
+            }
         }
     }
 

@@ -23,6 +23,7 @@ final class Record {
     var paidPrice:    Double? = nil
     var currentValue: Double? = nil
     var itunesId:     Int?  = nil
+    var discogsId:    Int?  = nil
 
     init(artist: String = "", album: String = "", year: String = "",
          genre: String = "", label: String = "", format: String = "",

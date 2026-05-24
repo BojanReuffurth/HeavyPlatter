@@ -27,11 +27,13 @@ struct EditView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(settings.accentColor)
+                    Button { dismiss() } label: {
+                        Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+                    }.buttonStyle(.plain)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(store.isEditing ? "Save" : "Add") { save() }
-                        .fontWeight(.semibold)
+                        .font(Theme.courier(14, .semibold))
                         .foregroundStyle(store.canSave ? settings.accentColor : Theme.textT)
                         .disabled(!store.canSave)
                 }
@@ -236,6 +238,7 @@ struct EditView: View {
         if let d = store.coverData { r.coverData = d }
         r.paidPrice    = Double(store.paidPrice)
         r.currentValue = Double(store.curValue)
+        if let did = store.discogsId { r.discogsId = did }
         dismiss()
     }
 }

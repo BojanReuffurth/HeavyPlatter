@@ -21,7 +21,7 @@ struct VinCoApp: App {
             AppView(store: VinCoApp.store)
                 .modelContainer(for: Record.self)
                 .environment(settings)
-                .preferredColorScheme(.dark)
+            // preferredColorScheme is applied inside AppView from settings.preferredScheme
         }
     }
 }

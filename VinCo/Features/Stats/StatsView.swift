@@ -38,42 +38,38 @@ struct StatsView: View {
             .navigationTitle("Stats")
             .toolbarBackground(Theme.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-        }
-    }
-
-    // MARK: – Pin to Home
-    private var pinToHomeSection: some View {
-        RBSection("Pin to Header") {
-            ForEach(Array(pinOptions.enumerated()), id: \.offset) { idx, item in
-                RBRow(divider: idx < pinOptions.count - 1) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.label)
-                                .font(.system(size: 14)).foregroundStyle(Theme.textP)
-                            Text(item.desc)
-                                .font(.system(size: 11)).foregroundStyle(Theme.textT)
-                        }
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { settings.pinnedStats.contains(item.key) },
-                            set: { on in
-                                var p = settings.pinnedStats
-                                if on { p.insert(item.key) } else { p.remove(item.key) }
-                                settings.pinnedStats = p
-                            }
-                        )).tint(settings.accentColor)
-                    }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CloseButton()
                 }
             }
         }
     }
 
-    private let pinOptions: [(key: String, label: String, desc: String)] = [
-        (key: "records",  label: "Records",          desc: "Total records in your collection"),
-        (key: "wishlist", label: "Wishlist",          desc: "Number of records on your wishlist"),
-        (key: "genres",   label: "Genres",            desc: "Distinct genre count"),
-        (key: "value",    label: "Collection Value",  desc: "Sum of current record values"),
-    ]
+    // MARK: – Pin to Home (only Collection Value toggle)
+    private var pinToHomeSection: some View {
+        RBSection("Header Badge") {
+            RBRow(divider: false) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show Collection Value")
+                            .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                        Text("Displays Paid · Value · ±Gain next to the stats icon")
+                            .font(.system(size: 11)).foregroundStyle(Theme.textT)
+                    }
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get:  { settings.pinnedStats.contains("value") },
+                        set:  { on in
+                            var p = settings.pinnedStats
+                            if on { p.insert("value") } else { p.remove("value") }
+                            settings.pinnedStats = p
+                        }
+                    )).tint(settings.accentColor)
+                }
+            }
+        }
+    }
 
     // MARK: – Summary grid
     private var summaryGrid: some View {

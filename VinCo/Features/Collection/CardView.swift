@@ -1,23 +1,12 @@
 import SwiftUI
 
+/// Front-face grid card.
+/// All interaction (tap → expand overlay) is driven from CollectionView.
 struct CardView: View {
     let record: Record
-    var onInfo:   () -> Void = {}
-    var onEdit:   () -> Void = {}
-    var onMove:   () -> Void = {}
-    var onDelete: () -> Void = {}
     @Environment(Settings.self) private var settings
 
     var body: some View {
-        front
-            .clipShape(RoundedRectangle(cornerRadius: Theme.cardR))
-            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
-            // Tapping anywhere on the card opens the detail sheet
-            .onTapGesture { onInfo() }
-    }
-
-    // MARK: – Front face
-    private var front: some View {
         ZStack(alignment: .bottomLeading) {
             // Cover art or vinyl placeholder
             Group {
@@ -29,52 +18,39 @@ struct CardView: View {
             }
             .aspectRatio(1, contentMode: .fit).frame(maxWidth: .infinity).clipped()
 
-            // Bottom gradient: album bold first, then artist
+            // Bottom gradient: album bold, artist secondary
             VStack(alignment: .leading, spacing: 2) {
                 Text(record.album)
-                    .font(.system(size: 13, weight: .bold)).lineLimit(1)
+                    .font(Theme.courier(13, .bold)).lineLimit(1)
                 Text(record.artist)
-                    .font(.system(size: 11)).lineLimit(1).opacity(0.80)
+                    .font(Theme.courier(11)).lineLimit(1).opacity(0.80)
             }
             .padding(10).frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.cardGrad()).foregroundStyle(.white)
         }
-        // Year + genre badges – top left
+        // Year + genre badges — top left
         .overlay(alignment: .topLeading) {
             HStack(spacing: 4) {
                 if !record.year.isEmpty {
-                    Text(record.year)
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(Color.black.opacity(0.60))
-                        .clipShape(Capsule())
+                    badge(record.year, Color.black.opacity(0.60))
                 }
                 if !record.genre.isEmpty {
-                    Text(record.genre)
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(settings.accentColor.opacity(0.85))
-                        .clipShape(Capsule())
-                }
-            }
-            .padding(8)
-        }
-        // Condition badge + edit shortcut – top right
-        .overlay(alignment: .topTrailing) {
-            VStack(alignment: .trailing, spacing: 4) {
-                if !record.condition.isEmpty {
-                    Text(record.condition)
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5).padding(.vertical, 3)
-                        .background(Color.black.opacity(0.55))
-                        .clipShape(Capsule())
+                    badge(record.genre, settings.accentColor.opacity(0.85))
                 }
             }
             .padding(8)
         }
         .aspectRatio(1, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.cardR))
+        .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
+    }
+
+    private func badge(_ text: String, _ bg: Color) -> some View {
+        Text(text)
+            .font(Theme.courier(9, .bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6).padding(.vertical, 3)
+            .background(bg)
+            .clipShape(Capsule())
     }
 }

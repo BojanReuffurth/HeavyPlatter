@@ -13,12 +13,12 @@ import Observation
     var username:     String = UserDefaults.standard.string(forKey: "rb_username") ?? ""        { didSet { UserDefaults.standard.set(username,     forKey: "rb_username") } }
     var isPublic:     Bool   = UserDefaults.standard.object(forKey: "rb_public")  as? Bool ?? false { didSet { UserDefaults.standard.set(isPublic,  forKey: "rb_public")   } }
     private var genresJSON:  String = UserDefaults.standard.string(forKey: "rb_genres") ?? "[]"  { didSet { UserDefaults.standard.set(genresJSON,   forKey: "rb_genres")   } }
-    private var pinnedJSON:  String = UserDefaults.standard.string(forKey: "rb_pinned") ?? "[\"records\"]" { didSet { UserDefaults.standard.set(pinnedJSON, forKey: "rb_pinned") } }
+    private var pinnedJSON:  String = UserDefaults.standard.string(forKey: "rb_pinned") ?? "[\"value\"]" { didSet { UserDefaults.standard.set(pinnedJSON, forKey: "rb_pinned") } }
 
     /// Keys that are pinned to the home header. Possible values: "records","wishlist","genres","value".
     var pinnedStats: Set<String> {
-        get { Set((try? JSONDecoder().decode([String].self, from: Data(pinnedJSON.utf8))) ?? ["records"]) }
-        set { pinnedJSON = (try? String(data: JSONEncoder().encode(Array(newValue)), encoding: .utf8)) ?? "[\"records\"]" }
+        get { Set((try? JSONDecoder().decode([String].self, from: Data(pinnedJSON.utf8))) ?? ["value"]) }
+        set { pinnedJSON = (try? String(data: JSONEncoder().encode(Array(newValue)), encoding: .utf8)) ?? "[\"value\"]" }
     }
 
     var customGenres: [String] {

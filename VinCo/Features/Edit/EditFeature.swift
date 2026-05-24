@@ -6,28 +6,29 @@ import SwiftData
 struct EditFeature {
     @ObservableState
     struct State: Equatable {
-        // Mode
-        var record:     Record? = nil     // nil = add mode
+        var record:     Record? = nil
         var isWishlist: Bool    = false
 
-        // Form fields
         var artist    = ""; var album   = ""; var year      = ""
         var genre     = ""; var label   = ""; var format    = ""
         var country   = ""; var notes   = ""; var condition = "VG"
         var colorHex  = Record.randomColor()
         var coverData: Data? = nil
         var paidPrice = ""; var curValue = ""
+        var discogsId: Int?  = nil
 
         // Discogs
-        var query:    String         = ""
-        var results:  [DiscogsResult] = []
-        var searching:Bool           = false
+        var query:     String          = ""
+        var results:   [DiscogsResult] = []
+        var searching: Bool            = false
 
         // Cover art
         var fetchingArt: Bool = false
+        // Price fetch
+        var fetchingPrice: Bool = false
 
-        var canSave: Bool { !artist.trimmingCharacters(in: .whitespaces).isEmpty &&
-                            !album.trimmingCharacters(in: .whitespaces).isEmpty }
+        var canSave:  Bool { !artist.trimmingCharacters(in: .whitespaces).isEmpty &&
+                             !album.trimmingCharacters(in: .whitespaces).isEmpty }
         var isEditing: Bool { record != nil }
     }
 
@@ -40,6 +41,7 @@ struct EditFeature {
         case resultPicked(DiscogsResult)
         case fetchArtTapped
         case artReceived(Data?)
+        case priceReceived(Double)
         case saveTapped
         case cancelTapped
     }
@@ -57,6 +59,7 @@ struct EditFeature {
                 state.genre  = r.genre;  state.label  = r.label;  state.format  = r.format
                 state.country = r.country; state.notes = r.notes; state.condition = r.condition
                 state.colorHex = r.colorHex; state.coverData = r.coverData
+                state.discogsId = r.discogsId
                 if let p = r.paidPrice    { state.paidPrice = String(format: "%.2f", p) }
                 if let v = r.currentValue { state.curValue  = String(format: "%.2f", v) }
                 return .none
@@ -68,12 +71,14 @@ struct EditFeature {
                 guard !q.isEmpty else { return .none }
                 state.searching = true; state.results = []
                 return .run { [q] send in
-                    // Token passed via DiscogsClient; here we pass empty — view will inject token
-                    let r = await discogs.search(q, "")
+                    // Read token from UserDefaults so Discogs auth works
+                    let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
+                    let r = await discogs.search(q, token)
                     await send(.resultsReceived(r))
                 }
 
-            case .resultsReceived(let r): state.results = r; state.searching = false; return .none
+            case .resultsReceived(let r):
+                state.results = r; state.searching = false; return .none
 
             case .resultPicked(let r):
                 let parts = r.title.components(separatedBy: " - ")
@@ -84,8 +89,21 @@ struct EditFeature {
                 if !r.label.isEmpty   { state.label   = r.label   }
                 if !r.country.isEmpty { state.country = r.country }
                 if !r.format.isEmpty  { state.format  = r.format  }
+                state.discogsId = r.id > 0 ? r.id : nil
                 state.results = []; state.query = ""
-                return .send(.fetchArtTapped)
+
+                // Fetch art + market price in parallel
+                let rid = r.id
+                return .merge(
+                    .send(.fetchArtTapped),
+                    .run { send in
+                        guard rid > 0 else { return }
+                        let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
+                        if let price = await discogs.fetchPrice(rid, token) {
+                            await send(.priceReceived(price))
+                        }
+                    }
+                )
 
             case .fetchArtTapped:
                 guard !state.artist.isEmpty || !state.album.isEmpty else { return .none }
@@ -100,9 +118,16 @@ struct EditFeature {
                     await send(.artReceived(nil))
                 }
 
-            case .artReceived(let data): state.coverData = data; state.fetchingArt = false; return .none
+            case .artReceived(let data):
+                state.coverData = data; state.fetchingArt = false; return .none
 
-            // Save / cancel handled in view (needs ModelContext)
+            case .priceReceived(let price):
+                // Only auto-fill if user hasn't entered a value yet
+                if state.curValue.isEmpty {
+                    state.curValue = String(format: "%.2f", price)
+                }
+                return .none
+
             case .saveTapped, .cancelTapped: return .none
             case .binding: return .none
             }

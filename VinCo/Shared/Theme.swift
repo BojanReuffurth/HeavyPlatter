@@ -13,6 +13,11 @@ enum Theme {
     static let textS  = Color(light: Color.black.opacity(0.55), dark: Color.white.opacity(0.55))
     static let textT  = Color(light: Color.black.opacity(0.35), dark: Color.white.opacity(0.30))
 
+    // MARK: – Courier New font (matches PWA's monospace look)
+    static func courier(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        Font.custom("Courier New", size: size).weight(weight)
+    }
+
     // MARK: – Shape constants
     static let cardR:       CGFloat = 14
     static let sectR:       CGFloat = 16
@@ -27,6 +32,19 @@ enum Theme {
     static func headerGrad() -> LinearGradient {
         LinearGradient(colors: [.clear, .black.opacity(0.85)],
                        startPoint: .center, endPoint: .bottom)
+    }
+}
+
+// MARK: – Subtle close button (non-iOS-standard ✕)
+struct CloseButton: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        Button { dismiss() } label: {
+            Text("✕")
+                .font(Theme.courier(15))
+                .foregroundStyle(Theme.textT)
+        }
+        .buttonStyle(.plain)
     }
 }
 

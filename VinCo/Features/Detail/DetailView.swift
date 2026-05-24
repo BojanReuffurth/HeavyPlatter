@@ -45,6 +45,12 @@ struct DetailView: View {
             Group {
                 if let d = rec.coverData, let img = UIImage(data: d) {
                     Image(uiImage: img).resizable().scaledToFill()
+                        .overlay(alignment: .topTrailing) {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.55))
+                                .padding(8)
+                        }
                         .onTapGesture { store.send(.toggleFullArt) }
                 } else {
                     ZStack { Theme.bg1; VinylView(color: rec.colorHex).padding(60) }
@@ -152,7 +158,9 @@ struct DetailView: View {
     @ToolbarContentBuilder
     private var navBar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button("Done") { dismiss() }.foregroundStyle(settings.accentColor)
+            Button { dismiss() } label: {
+                Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+            }.buttonStyle(.plain)
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
