@@ -6,23 +6,74 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EFF072F82FC327D1001D748E /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = EFF072F72FC327D1001D748E /* ComposableArchitecture */; };
+		EFF073BE2FC32948001D748E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EFF073BB2FC32948001D748E /* Assets.xcassets */; };
+		EFF074262FC329A8001D748E /* CollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0740D2FC329A8001D748E /* CollectionView.swift */; };
+		EFF074272FC329A8001D748E /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074082FC329A8001D748E /* AppFeature.swift */; };
+		EFF074282FC329A8001D748E /* CSVExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074022FC329A8001D748E /* CSVExporter.swift */; };
+		EFF074292FC329A8001D748E /* iTunesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074042FC329A8001D748E /* iTunesClient.swift */; };
+		EFF0742A2FC329A8001D748E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074222FC329A8001D748E /* Theme.swift */; };
+		EFF0742B2FC329A8001D748E /* Record.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0741C2FC329A8001D748E /* Record.swift */; };
+		EFF0742C2FC329A8001D748E /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074012FC329A8001D748E /* AudioPlayer.swift */; };
+		EFF0742D2FC329A8001D748E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074162FC329A8001D748E /* SettingsView.swift */; };
+		EFF0742E2FC329A8001D748E /* StatsFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074182FC329A8001D748E /* StatsFeature.swift */; };
+		EFF0742F2FC329A8001D748E /* MusicBrainzClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074052FC329A8001D748E /* MusicBrainzClient.swift */; };
+		EFF074302FC329A8001D748E /* EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074132FC329A8001D748E /* EditView.swift */; };
+		EFF074312FC329A8001D748E /* VinylView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074232FC329A8001D748E /* VinylView.swift */; };
+		EFF074322FC329A8001D748E /* AppearanceSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0741F2FC329A8001D748E /* AppearanceSetup.swift */; };
+		EFF074332FC329A8001D748E /* SettingsFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074152FC329A8001D748E /* SettingsFeature.swift */; };
+		EFF074342FC329A8001D748E /* VinCoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074252FC329A8001D748E /* VinCoApp.swift */; };
+		EFF074352FC329A8001D748E /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074212FC329A8001D748E /* Settings.swift */; };
+		EFF074362FC329A8001D748E /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074102FC329A8001D748E /* DetailView.swift */; };
+		EFF074372FC329A8001D748E /* DetailFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0740F2FC329A8001D748E /* DetailFeature.swift */; };
+		EFF074382FC329A8001D748E /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0740B2FC329A8001D748E /* CardView.swift */; };
+		EFF074392FC329A8001D748E /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074092FC329A8001D748E /* AppView.swift */; };
+		EFF0743A2FC329A8001D748E /* DiscogsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074032FC329A8001D748E /* DiscogsClient.swift */; };
+		EFF0743B2FC329A8001D748E /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0741D2FC329A8001D748E /* Track.swift */; };
+		EFF0743C2FC329A8001D748E /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074202FC329A8001D748E /* Color+Hex.swift */; };
+		EFF0743D2FC329A8001D748E /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074192FC329A8001D748E /* StatsView.swift */; };
+		EFF0743E2FC329A8001D748E /* CollectionFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0740C2FC329A8001D748E /* CollectionFeature.swift */; };
+		EFF0743F2FC329A8001D748E /* EditFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074122FC329A8001D748E /* EditFeature.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		EFF072E62FC3279D001D748E /* VinCo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VinCo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EFF073BB2FC32948001D748E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EFF074012FC329A8001D748E /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		EFF074022FC329A8001D748E /* CSVExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVExporter.swift; sourceTree = "<group>"; };
+		EFF074032FC329A8001D748E /* DiscogsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscogsClient.swift; sourceTree = "<group>"; };
+		EFF074042FC329A8001D748E /* iTunesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTunesClient.swift; sourceTree = "<group>"; };
+		EFF074052FC329A8001D748E /* MusicBrainzClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicBrainzClient.swift; sourceTree = "<group>"; };
+		EFF074082FC329A8001D748E /* AppFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
+		EFF074092FC329A8001D748E /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
+		EFF0740B2FC329A8001D748E /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
+		EFF0740C2FC329A8001D748E /* CollectionFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionFeature.swift; sourceTree = "<group>"; };
+		EFF0740D2FC329A8001D748E /* CollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionView.swift; sourceTree = "<group>"; };
+		EFF0740F2FC329A8001D748E /* DetailFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailFeature.swift; sourceTree = "<group>"; };
+		EFF074102FC329A8001D748E /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
+		EFF074122FC329A8001D748E /* EditFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFeature.swift; sourceTree = "<group>"; };
+		EFF074132FC329A8001D748E /* EditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditView.swift; sourceTree = "<group>"; };
+		EFF074152FC329A8001D748E /* SettingsFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsFeature.swift; sourceTree = "<group>"; };
+		EFF074162FC329A8001D748E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		EFF074182FC329A8001D748E /* StatsFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsFeature.swift; sourceTree = "<group>"; };
+		EFF074192FC329A8001D748E /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		EFF0741C2FC329A8001D748E /* Record.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Record.swift; sourceTree = "<group>"; };
+		EFF0741D2FC329A8001D748E /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
+		EFF0741F2FC329A8001D748E /* AppearanceSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSetup.swift; sourceTree = "<group>"; };
+		EFF074202FC329A8001D748E /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		EFF074212FC329A8001D748E /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		EFF074222FC329A8001D748E /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		EFF074232FC329A8001D748E /* VinylView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VinylView.swift; sourceTree = "<group>"; };
+		EFF074252FC329A8001D748E /* VinCoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VinCoApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		EFF072E82FC3279D001D748E /* VinCo */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = VinCo;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		EFF072E32FC3279D001D748E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EFF072F82FC327D1001D748E /* ComposableArchitecture in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,7 +83,7 @@
 		EFF072DD2FC3279D001D748E = {
 			isa = PBXGroup;
 			children = (
-				EFF072E82FC3279D001D748E /* VinCo */,
+				EFF073BD2FC32948001D748E /* VinCo */,
 				EFF072E72FC3279D001D748E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +94,136 @@
 				EFF072E62FC3279D001D748E /* VinCo.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		EFF073BD2FC32948001D748E /* VinCo */ = {
+			isa = PBXGroup;
+			children = (
+				EFF074002FC329A8001D748E /* {Models,Shared,Clients} */,
+				EFF074062FC329A8001D748E /* Clients */,
+				EFF0741B2FC329A8001D748E /* Features */,
+				EFF0741E2FC329A8001D748E /* Models */,
+				EFF074242FC329A8001D748E /* Shared */,
+				EFF074252FC329A8001D748E /* VinCoApp.swift */,
+				EFF073BB2FC32948001D748E /* Assets.xcassets */,
+			);
+			path = VinCo;
+			sourceTree = "<group>";
+		};
+		EFF074002FC329A8001D748E /* {Models,Shared,Clients} */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "{Models,Shared,Clients}";
+			sourceTree = "<group>";
+		};
+		EFF074062FC329A8001D748E /* Clients */ = {
+			isa = PBXGroup;
+			children = (
+				EFF074012FC329A8001D748E /* AudioPlayer.swift */,
+				EFF074022FC329A8001D748E /* CSVExporter.swift */,
+				EFF074032FC329A8001D748E /* DiscogsClient.swift */,
+				EFF074042FC329A8001D748E /* iTunesClient.swift */,
+				EFF074052FC329A8001D748E /* MusicBrainzClient.swift */,
+			);
+			path = Clients;
+			sourceTree = "<group>";
+		};
+		EFF074072FC329A8001D748E /* {App,Collection,Detail,Edit,Stats,Settings} */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "{App,Collection,Detail,Edit,Stats,Settings}";
+			sourceTree = "<group>";
+		};
+		EFF0740A2FC329A8001D748E /* App */ = {
+			isa = PBXGroup;
+			children = (
+				EFF074082FC329A8001D748E /* AppFeature.swift */,
+				EFF074092FC329A8001D748E /* AppView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		EFF0740E2FC329A8001D748E /* Collection */ = {
+			isa = PBXGroup;
+			children = (
+				EFF0740B2FC329A8001D748E /* CardView.swift */,
+				EFF0740C2FC329A8001D748E /* CollectionFeature.swift */,
+				EFF0740D2FC329A8001D748E /* CollectionView.swift */,
+			);
+			path = Collection;
+			sourceTree = "<group>";
+		};
+		EFF074112FC329A8001D748E /* Detail */ = {
+			isa = PBXGroup;
+			children = (
+				EFF0740F2FC329A8001D748E /* DetailFeature.swift */,
+				EFF074102FC329A8001D748E /* DetailView.swift */,
+			);
+			path = Detail;
+			sourceTree = "<group>";
+		};
+		EFF074142FC329A8001D748E /* Edit */ = {
+			isa = PBXGroup;
+			children = (
+				EFF074122FC329A8001D748E /* EditFeature.swift */,
+				EFF074132FC329A8001D748E /* EditView.swift */,
+			);
+			path = Edit;
+			sourceTree = "<group>";
+		};
+		EFF074172FC329A8001D748E /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				EFF074152FC329A8001D748E /* SettingsFeature.swift */,
+				EFF074162FC329A8001D748E /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		EFF0741A2FC329A8001D748E /* Stats */ = {
+			isa = PBXGroup;
+			children = (
+				EFF074182FC329A8001D748E /* StatsFeature.swift */,
+				EFF074192FC329A8001D748E /* StatsView.swift */,
+			);
+			path = Stats;
+			sourceTree = "<group>";
+		};
+		EFF0741B2FC329A8001D748E /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				EFF074072FC329A8001D748E /* {App,Collection,Detail,Edit,Stats,Settings} */,
+				EFF0740A2FC329A8001D748E /* App */,
+				EFF0740E2FC329A8001D748E /* Collection */,
+				EFF074112FC329A8001D748E /* Detail */,
+				EFF074142FC329A8001D748E /* Edit */,
+				EFF074172FC329A8001D748E /* Settings */,
+				EFF0741A2FC329A8001D748E /* Stats */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		EFF0741E2FC329A8001D748E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				EFF0741C2FC329A8001D748E /* Record.swift */,
+				EFF0741D2FC329A8001D748E /* Track.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		EFF074242FC329A8001D748E /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				EFF0741F2FC329A8001D748E /* AppearanceSetup.swift */,
+				EFF074202FC329A8001D748E /* Color+Hex.swift */,
+				EFF074212FC329A8001D748E /* Settings.swift */,
+				EFF074222FC329A8001D748E /* Theme.swift */,
+				EFF074232FC329A8001D748E /* VinylView.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -60,11 +241,9 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				EFF072E82FC3279D001D748E /* VinCo */,
-			);
 			name = VinCo;
 			packageProductDependencies = (
+				EFF072F72FC327D1001D748E /* ComposableArchitecture */,
 			);
 			productName = VinCo;
 			productReference = EFF072E62FC3279D001D748E /* VinCo.app */;
@@ -94,6 +273,9 @@
 			);
 			mainGroup = EFF072DD2FC3279D001D748E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EFF072F62FC327D1001D748E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EFF072E72FC3279D001D748E /* Products */;
 			projectDirPath = "";
@@ -109,6 +291,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EFF073BE2FC32948001D748E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +302,32 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EFF074262FC329A8001D748E /* CollectionView.swift in Sources */,
+				EFF074272FC329A8001D748E /* AppFeature.swift in Sources */,
+				EFF074282FC329A8001D748E /* CSVExporter.swift in Sources */,
+				EFF074292FC329A8001D748E /* iTunesClient.swift in Sources */,
+				EFF0742A2FC329A8001D748E /* Theme.swift in Sources */,
+				EFF0742B2FC329A8001D748E /* Record.swift in Sources */,
+				EFF0742C2FC329A8001D748E /* AudioPlayer.swift in Sources */,
+				EFF0742D2FC329A8001D748E /* SettingsView.swift in Sources */,
+				EFF0742E2FC329A8001D748E /* StatsFeature.swift in Sources */,
+				EFF0742F2FC329A8001D748E /* MusicBrainzClient.swift in Sources */,
+				EFF074302FC329A8001D748E /* EditView.swift in Sources */,
+				EFF074312FC329A8001D748E /* VinylView.swift in Sources */,
+				EFF074322FC329A8001D748E /* AppearanceSetup.swift in Sources */,
+				EFF074332FC329A8001D748E /* SettingsFeature.swift in Sources */,
+				EFF074342FC329A8001D748E /* VinCoApp.swift in Sources */,
+				EFF074352FC329A8001D748E /* Settings.swift in Sources */,
+				EFF074362FC329A8001D748E /* DetailView.swift in Sources */,
+				EFF074372FC329A8001D748E /* DetailFeature.swift in Sources */,
+				EFF074382FC329A8001D748E /* CardView.swift in Sources */,
+				EFF074392FC329A8001D748E /* AppView.swift in Sources */,
+				EFF0743A2FC329A8001D748E /* DiscogsClient.swift in Sources */,
+				EFF0743B2FC329A8001D748E /* Track.swift in Sources */,
+				EFF0743C2FC329A8001D748E /* Color+Hex.swift in Sources */,
+				EFF0743D2FC329A8001D748E /* StatsView.swift in Sources */,
+				EFF0743E2FC329A8001D748E /* CollectionFeature.swift in Sources */,
+				EFF0743F2FC329A8001D748E /* EditFeature.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,6 +541,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EFF072F62FC327D1001D748E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EFF072F72FC327D1001D748E /* ComposableArchitecture */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFF072F62FC327D1001D748E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = ComposableArchitecture;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EFF072DE2FC3279D001D748E /* Project object */;
 }

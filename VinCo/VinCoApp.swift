@@ -1,32 +1,27 @@
-//
-//  VinCoApp.swift
-//  VinCo
-//
-//  Created by Bojan Reuffurth on 24.05.2026.
-//
-
 import SwiftUI
 import SwiftData
+import ComposableArchitecture
 
 @main
 struct VinCoApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    /// Single shared store for the whole app.
+    static let store = Store(initialState: AppFeature.State()) {
+        AppFeature()
+            ._printChanges()   // remove this line before shipping — logs every action to console
+    }
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @State private var settings = Settings()
+
+    init() {
+        AppearanceSetup.apply()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppView(store: VinCoApp.store)
+                .modelContainer(for: Record.self)
+                .environment(settings)
+                .preferredColorScheme(.dark)
         }
-        .modelContainer(sharedModelContainer)
     }
 }
