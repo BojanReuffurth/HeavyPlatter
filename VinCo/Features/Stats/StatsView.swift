@@ -25,7 +25,6 @@ struct StatsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    pinToHomeSection
                     summaryGrid
                     if paid > 0 || value > 0 { valuationCard }
                     if !genres.isEmpty  { barChart("GENRES",    data: genres,  horizontal: true) }
@@ -36,36 +35,12 @@ struct StatsView: View {
             }
             .background(Theme.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
             .navigationTitle("Stats")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Theme.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     CloseButton()
-                }
-            }
-        }
-    }
-
-    // MARK: – Pin to Home (only Collection Value toggle)
-    private var pinToHomeSection: some View {
-        RBSection("Header Badge") {
-            RBRow(divider: false) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Show Collection Value")
-                            .font(.system(size: 14)).foregroundStyle(Theme.textP)
-                        Text("Displays Paid · Value · ±Gain next to the stats icon")
-                            .font(.system(size: 11)).foregroundStyle(Theme.textT)
-                    }
-                    Spacer()
-                    Toggle("", isOn: Binding(
-                        get:  { settings.pinnedStats.contains("value") },
-                        set:  { on in
-                            var p = settings.pinnedStats
-                            if on { p.insert("value") } else { p.remove("value") }
-                            settings.pinnedStats = p
-                        }
-                    )).tint(settings.accentColor)
                 }
             }
         }

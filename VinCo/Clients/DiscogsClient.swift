@@ -25,7 +25,7 @@ extension DiscogsClient: DependencyKey {
                 let (data, _) = try await URLSession.shared.data(for: req)
                 let resp = try JSONDecoder().decode(DResp.self, from: data)
                 return resp.results.prefix(15).map { r in
-                    let yr = r.year.map(String.init) ?? ""
+                    let yr = r.year ?? ""
                     let lb = r.label?.first ?? ""
                     let co = r.country ?? ""
                     let fm = r.format?.first ?? ""
@@ -52,7 +52,7 @@ extension DiscogsClient: DependencyKey {
 }
 
 private nonisolated struct DResp:       Decodable { let results: [DRelease] }
-private nonisolated struct DRelease:    Decodable { let id: Int; let title: String; let year: Int?; let label: [String]?; let country: String?; let format: [String]? }
+private nonisolated struct DRelease:    Decodable { let id: Int; let title: String; let year: String?; let label: [String]?; let country: String?; let format: [String]? }
 private nonisolated struct ReleaseResp: Decodable { let lowest_price: Double? }
 
 extension DependencyValues {
