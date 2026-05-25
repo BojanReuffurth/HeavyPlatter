@@ -20,8 +20,17 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
-	<key>CFBundleAlternateIcons</key>
+	<key>CFBundleIcons</key>
 	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIcon</string></array>
+			<key>UIPrerenderedIcon</key>
+			<false/>
+		</dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
 		<key>VinCo-Icon-Sky</key>
 		<dict>
 			<key>CFBundleIconFiles</key>
@@ -127,6 +136,7 @@
 			<key>UIPrerenderedIcon</key>
 			<false/>
 		</dict>
+	</dict>
 	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

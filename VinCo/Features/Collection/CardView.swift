@@ -1,7 +1,6 @@
 import SwiftUI
 
 /// Front-face grid card.
-/// All interaction (tap → expand overlay) is driven from CollectionView.
 struct CardView: View {
     let record: Record
     @Environment(Settings.self) private var settings
@@ -13,22 +12,20 @@ struct CardView: View {
                 if settings.showArtwork, let d = record.coverData, let img = UIImage(data: d) {
                     Image(uiImage: img).resizable().scaledToFill()
                 } else {
-                    ZStack { Theme.bg1; VinylView(color: record.colorHex).padding(24) }
+                    ZStack { settings.bg1; VinylView(color: record.colorHex).padding(24) }
                 }
             }
             .aspectRatio(1, contentMode: .fit).frame(maxWidth: .infinity).clipped()
 
             // Bottom gradient: album bold, artist secondary
             VStack(alignment: .leading, spacing: 2) {
-                Text(record.album)
-                    .font(Theme.courier(13, .bold)).lineLimit(1)
-                Text(record.artist)
-                    .font(Theme.courier(11)).lineLimit(1).opacity(0.80)
+                Text(record.album).font(Theme.courier(13, .bold)).lineLimit(1)
+                Text(record.artist).font(Theme.courier(11)).lineLimit(1).opacity(0.80)
             }
             .padding(10).frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.cardGrad()).foregroundStyle(.white)
         }
-        // Year + genre badges — top left
+        // Year + genre + RPM badges — top left
         .overlay(alignment: .topLeading) {
             HStack(spacing: 4) {
                 if !record.year.isEmpty {
@@ -36,6 +33,9 @@ struct CardView: View {
                 }
                 if !record.genre.isEmpty {
                     badge(record.genre, Color(hex: record.colorHex).opacity(0.90))
+                }
+                if !record.rpm.isEmpty {
+                    badge("\(record.rpm) RPM", Color(hex: record.colorHex).opacity(0.65))
                 }
             }
             .padding(8)

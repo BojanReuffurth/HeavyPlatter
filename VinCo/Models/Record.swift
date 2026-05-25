@@ -24,6 +24,7 @@ final class Record {
     var currentValue: Double? = nil
     var itunesId:     Int?  = nil
     var discogsId:    Int?  = nil
+    var rpm:          String = ""
 
     init(artist: String = "", album: String = "", year: String = "",
          genre: String = "", label: String = "", format: String = "",

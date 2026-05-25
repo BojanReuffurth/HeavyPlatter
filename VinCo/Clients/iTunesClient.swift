@@ -15,7 +15,7 @@ extension iTunesClient: DependencyKey {
     static let liveValue = iTunesClient { artist, album in
         var out = iTunesFetch()
         let q = "\(artist) \(album)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        guard let url = URL(string: "https://itunes.apple.com/search?term=\(q)&entity=album&media=music&limit=10")
+        guard let url = URL(string: "https://itunes.apple.com/search?term=\(q)&entity=album&media=music&limit=10&country=us")
         else { return out }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -45,7 +45,7 @@ private func score(_ a: Album, ar: String, al: String) -> Int {
     return s
 }
 private func fetchTracks(_ id: Int) async -> [Track] {
-    guard let url = URL(string: "https://itunes.apple.com/lookup?id=\(id)&entity=song&limit=60")
+    guard let url = URL(string: "https://itunes.apple.com/lookup?id=\(id)&entity=song&limit=60&country=us")
     else { return [] }
     do {
         let (data, _) = try await URLSession.shared.data(from: url)

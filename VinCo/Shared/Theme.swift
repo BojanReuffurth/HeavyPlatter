@@ -1,13 +1,13 @@
 import SwiftUI
 
 enum Theme {
-    // MARK: – Adaptive backgrounds (dark → current, light → iOS-standard grays)
+    // MARK: – Adaptive base colors (used as static fallbacks / UIKit appearance)
     static let bg0    = Color(light: Color(hex: "#F2F2F7"), dark: Color(hex: "#0A0A0A"))
     static let bg1    = Color(light: Color(hex: "#FFFFFF"), dark: Color(hex: "#111111"))
     static let bg2    = Color(light: Color(hex: "#E8E8ED"), dark: Color(hex: "#1C1C1C"))
     static let bg3    = Color(light: Color(hex: "#D8D8DD"), dark: Color(hex: "#272727"))
 
-    // MARK: – Adaptive dividers & text
+    // MARK: – Adaptive dividers & text (not palette-dependent)
     static let divide = Color(light: Color.black.opacity(0.10), dark: Color.white.opacity(0.07))
     static let textP  = Color(light: Color(hex: "#0D0D0D"),     dark: Color.white)
     static let textS  = Color(light: Color.black.opacity(0.55), dark: Color.white.opacity(0.55))
@@ -35,7 +35,7 @@ enum Theme {
     }
 }
 
-// MARK: – Subtle close button (non-iOS-standard ✕)
+// MARK: – Close button — plain ✕ only, no chrome
 struct CloseButton: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
@@ -48,8 +48,9 @@ struct CloseButton: View {
     }
 }
 
-// MARK: – Shared section container
+// MARK: – Shared section container (palette-aware)
 struct RBSection<C: View>: View {
+    @Environment(Settings.self) private var settings
     let title: String?
     @ViewBuilder let content: () -> C
     init(_ title: String? = nil, @ViewBuilder content: @escaping () -> C) {
@@ -59,17 +60,18 @@ struct RBSection<C: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             if let t = title {
                 Text(t.uppercased())
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .font(Theme.courier(11, .semibold))
                     .foregroundStyle(Theme.textT)
                     .padding(.horizontal, 16).padding(.bottom, 8)
             }
             VStack(spacing: 0) { content() }
-                .background(Theme.bg1)
+                .background(settings.bg1)
                 .clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
         }
     }
 }
 
+// MARK: – Shared row container (palette-aware)
 struct RBRow<C: View>: View {
     var divider: Bool = true
     @ViewBuilder let content: () -> C
@@ -81,25 +83,21 @@ struct RBRow<C: View>: View {
     }
 }
 
-// MARK: – Mini vinyl record icon (replaces opticaldisc SF symbol)
+// MARK: – Mini vinyl record icon
 struct MiniVinylIcon: View {
     var color: Color  = Color(hex: "#E8A87C")
     var size:  CGFloat = 22
     var body: some View {
         ZStack {
-            // Vinyl body
             Circle().fill(Color(hex: "#111111")).frame(width: size, height: size)
-            // Groove rings (5 rings)
             ForEach(0 ..< 5, id: \.self) { i in
                 Circle()
                     .stroke(Color.white.opacity(0.13), lineWidth: 0.6)
                     .frame(width: size * (0.88 - CGFloat(i) * 0.13),
                            height: size * (0.88 - CGFloat(i) * 0.13))
             }
-            // Coloured label circle
             Circle().fill(color)
                 .frame(width: size * 0.38, height: size * 0.38)
-            // Spindle hole
             Circle().fill(Color(hex: "#111111"))
                 .frame(width: size * 0.09, height: size * 0.09)
         }

@@ -21,10 +21,11 @@ struct EditView: View {
                 }
                 .padding(16).padding(.bottom, 40)
             }
-            .background(Theme.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .background(settings.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(store.isEditing ? "Edit Record" : "Add Record")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.bg1, for: .navigationBar)
+            .toolbarBackground(settings.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -44,7 +45,6 @@ struct EditView: View {
     }
 
     // MARK: – Cover block
-
     private var coverBlock: some View {
         RBSection {
             VStack(spacing: 14) {
@@ -53,7 +53,7 @@ struct EditView: View {
                         Image(uiImage: img).resizable().scaledToFill()
                             .frame(width: 130, height: 130).clipShape(RoundedRectangle(cornerRadius: 12))
                     } else {
-                        RoundedRectangle(cornerRadius: 12).fill(Theme.bg2).frame(width: 130, height: 130)
+                        RoundedRectangle(cornerRadius: 12).fill(settings.bg2).frame(width: 130, height: 130)
                             .overlay(VinylView(color: store.colorHex).frame(width: 80, height: 80))
                     }
                 }
@@ -65,7 +65,7 @@ struct EditView: View {
                             else { Image(systemName: "photo.badge.magnifyingglass") }
                             Text(store.fetchingArt ? "Searching…" : "Find Art")
                         }
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.black)
+                        .font(Theme.courier(13, .semibold)).foregroundStyle(.black)
                         .padding(.horizontal, 16).padding(.vertical, 9)
                         .background(settings.accentColor).clipShape(Capsule())
                     }
@@ -83,19 +83,19 @@ struct EditView: View {
         }
     }
 
-    // MARK: – Discogs block
+    // MARK: – Discogs block (with artwork thumbnails)
     private var discogsBlock: some View {
         RBSection("Search Discogs") {
             RBRow(divider: !store.results.isEmpty) {
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass").foregroundStyle(Theme.textT)
                     TextField("Artist or album…", text: $store.query.sending(\.queryChanged))
-                        .foregroundStyle(Theme.textP).tint(settings.accentColor)
+                        .font(Theme.courier(14)).foregroundStyle(Theme.textP).tint(settings.accentColor)
                         .onSubmit { store.send(.searchTapped) }
                     if store.searching { ProgressView().tint(settings.accentColor) }
                     else {
                         Button("Go") { store.send(.searchTapped) }
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(Theme.courier(12, .semibold))
                             .foregroundStyle(store.query.isEmpty ? Theme.textT : settings.accentColor)
                             .buttonStyle(.plain)
                             .disabled(store.query.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -104,15 +104,33 @@ struct EditView: View {
             }
             ForEach(store.results) { r in
                 Button { store.send(.resultPicked(r)) } label: {
-                    HStack {
+                    HStack(spacing: 10) {
+                        // Artwork thumbnail from Discogs
+                        Group {
+                            if !r.thumbURL.isEmpty, let url = URL(string: r.thumbURL) {
+                                AsyncImage(url: url) { img in
+                                    img.resizable().scaledToFill()
+                                } placeholder: {
+                                    settings.bg2
+                                }
+                            } else {
+                                settings.bg2
+                            }
+                        }
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(r.title).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.textP).lineLimit(1)
-                            if !r.subtitle.isEmpty { Text(r.subtitle).font(.system(size: 12)).foregroundStyle(Theme.textS) }
+                            Text(r.title)
+                                .font(Theme.courier(14, .medium)).foregroundStyle(Theme.textP).lineLimit(1)
+                            if !r.subtitle.isEmpty {
+                                Text(r.subtitle).font(Theme.courier(12)).foregroundStyle(Theme.textS)
+                            }
                         }
                         Spacer()
                         Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Theme.textT)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 11)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
                 if r.id != store.results.last?.id {
@@ -129,15 +147,16 @@ struct EditView: View {
             field("Album *",           $store.album)
             field("Year",              $store.year,   kb: .numberPad)
             chipRow("Genre",     selection: $store.genre,     opts: [""] + settings.allGenres)
+            chipRow("RPM",       selection: $store.rpm,       opts: [""] + Settings.rpms)
             chipRow("Condition", selection: $store.condition, opts: Settings.conditions)
             field("Label",             $store.label)
             field("Format (LP, 7\"…)", $store.format)
             field("Country",           $store.country)
             RBRow(divider: false) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Notes").font(.system(size: 14)).foregroundStyle(Theme.textS)
+                    Text("Notes").font(Theme.courier(14)).foregroundStyle(Theme.textS)
                     TextField("Optional…", text: $store.notes, axis: .vertical)
-                        .lineLimit(3...6).font(.system(size: 14))
+                        .lineLimit(3...6).font(Theme.courier(14))
                         .foregroundStyle(Theme.textP).tint(settings.accentColor)
                 }
             }
@@ -149,20 +168,22 @@ struct EditView: View {
         RBSection("Pricing") {
             RBRow {
                 HStack {
-                    Text("Paid").font(.system(size: 14)).foregroundStyle(Theme.textS)
+                    Text("Paid").font(Theme.courier(14)).foregroundStyle(Theme.textS)
                     Spacer()
                     TextField("\(settings.currency) 0", text: $store.paidPrice)
                         .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                        .foregroundStyle(Theme.textP).tint(settings.accentColor).frame(width: 90)
+                        .font(Theme.courier(14)).foregroundStyle(Theme.textP)
+                        .tint(settings.accentColor).frame(width: 90)
                 }
             }
             RBRow(divider: false) {
                 HStack {
-                    Text("Current Value").font(.system(size: 14)).foregroundStyle(Theme.textS)
+                    Text("Current Value").font(Theme.courier(14)).foregroundStyle(Theme.textS)
                     Spacer()
                     TextField("\(settings.currency) 0", text: $store.curValue)
                         .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                        .foregroundStyle(Theme.textP).tint(settings.accentColor).frame(width: 90)
+                        .font(Theme.courier(14)).foregroundStyle(Theme.textP)
+                        .tint(settings.accentColor).frame(width: 90)
                 }
             }
         }
@@ -175,78 +196,68 @@ struct EditView: View {
                 RBRow(divider: false) {
                     HStack(spacing: 10) {
                         ProgressView().tint(settings.accentColor)
-                        Text("Fetching tracks…")
-                            .font(.system(size: 13)).foregroundStyle(Theme.textS)
+                        Text("Fetching tracks…").font(Theme.courier(13)).foregroundStyle(Theme.textS)
                     }
                 }
+            } else if store.tracks.isEmpty {
+                RBRow(divider: false) {
+                    Button { store.send(.fetchTracksTapped) } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "list.bullet").font(.system(size: 13))
+                            Text("Fetch Tracklist").font(Theme.courier(13))
+                        }
+                        .foregroundStyle((store.artist.isEmpty && store.album.isEmpty)
+                                         ? Theme.textT : settings.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(store.artist.isEmpty && store.album.isEmpty)
+                }
             } else {
-                // Fetch button (always shown when no tracks yet)
-                if store.tracks.isEmpty {
-                    RBRow(divider: false) {
-                        Button { store.send(.fetchTracksTapped) } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "list.bullet").font(.system(size: 13))
-                                Text("Fetch Tracklist").font(.system(size: 13))
-                            }
-                            .foregroundStyle(
-                                (store.artist.isEmpty && store.album.isEmpty)
-                                    ? Theme.textT : settings.accentColor
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(store.artist.isEmpty && store.album.isEmpty)
-                    }
-                } else {
-                    // Editable track rows
-                    ForEach($store.tracks, id: \.id) { $track in
-                        RBRow(divider: true) {
-                            HStack(spacing: 8) {
-                                Text("\(track.number)")
-                                    .font(.system(size: 11)).foregroundStyle(Theme.textT)
-                                    .frame(width: 22, alignment: .trailing)
-                                TextField("Track name", text: $track.name)
-                                    .font(.system(size: 13)).foregroundStyle(Theme.textP)
-                                    .tint(settings.accentColor)
-                                Spacer()
-                                // Duration field (mm:ss format)
-                                TextField("0:00", text: Binding(
-                                    get: { track.duration > 0 ? track.durationStr : "" },
-                                    set: { s in
-                                        var updated = track
-                                        let parts = s.split(separator: ":").compactMap { Int($0) }
-                                        if parts.count == 2 { updated.duration = parts[0]*60 + parts[1] }
-                                        else if let sec = Int(s) { updated.duration = sec }
-                                        $track.wrappedValue = updated
-                                    }
-                                ))
-                                .font(.system(size: 11)).foregroundStyle(Theme.textT)
-                                .keyboardType(.numbersAndPunctuation)
-                                .frame(width: 44).multilineTextAlignment(.trailing)
+                ForEach($store.tracks, id: \.id) { $track in
+                    RBRow(divider: true) {
+                        HStack(spacing: 8) {
+                            Text("\(track.number)")
+                                .font(Theme.courier(11)).foregroundStyle(Theme.textT)
+                                .frame(width: 22, alignment: .trailing)
+                            TextField("Track name", text: $track.name)
+                                .font(Theme.courier(13)).foregroundStyle(Theme.textP)
                                 .tint(settings.accentColor)
-                                Button {
-                                    if let idx = store.tracks.firstIndex(where: { $0.id == track.id }) {
-                                        store.send(.deleteTrack(IndexSet([idx])))
-                                    }
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .font(.system(size: 18)).foregroundStyle(.red.opacity(0.7))
+                            Spacer()
+                            TextField("0:00", text: Binding(
+                                get: { track.duration > 0 ? track.durationStr : "" },
+                                set: { s in
+                                    var updated = track
+                                    let parts = s.split(separator: ":").compactMap { Int($0) }
+                                    if parts.count == 2 { updated.duration = parts[0]*60 + parts[1] }
+                                    else if let sec = Int(s) { updated.duration = sec }
+                                    $track.wrappedValue = updated
                                 }
-                                .buttonStyle(.plain)
+                            ))
+                            .font(Theme.courier(11)).foregroundStyle(Theme.textT)
+                            .keyboardType(.numbersAndPunctuation)
+                            .frame(width: 44).multilineTextAlignment(.trailing)
+                            .tint(settings.accentColor)
+                            Button {
+                                if let idx = store.tracks.firstIndex(where: { $0.id == track.id }) {
+                                    store.send(.deleteTrack(IndexSet([idx])))
+                                }
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.system(size: 18)).foregroundStyle(.red.opacity(0.7))
                             }
+                            .buttonStyle(.plain)
                         }
                     }
-                    // Add track row
-                    RBRow(divider: false) {
-                        Button { store.send(.addEmptyTrack) } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 16)).foregroundStyle(settings.accentColor)
-                                Text("Add Track")
-                                    .font(.system(size: 13)).foregroundStyle(settings.accentColor)
-                            }
+                }
+                RBRow(divider: false) {
+                    Button { store.send(.addEmptyTrack) } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16)).foregroundStyle(settings.accentColor)
+                            Text("Add Track").font(Theme.courier(13)).foregroundStyle(settings.accentColor)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -277,7 +288,7 @@ struct EditView: View {
     private func field(_ ph: String, _ binding: Binding<String>, kb: UIKeyboardType = .default) -> some View {
         RBRow {
             TextField(ph, text: binding)
-                .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                .font(Theme.courier(14)).foregroundStyle(Theme.textP)
                 .tint(settings.accentColor).keyboardType(kb)
         }
     }
@@ -285,18 +296,18 @@ struct EditView: View {
     private func chipRow(_ lbl: String, selection: Binding<String>, opts: [String]) -> some View {
         RBRow {
             VStack(alignment: .leading, spacing: 8) {
-                Text(lbl).font(.system(size: 14)).foregroundStyle(Theme.textS)
+                Text(lbl).font(Theme.courier(14)).foregroundStyle(Theme.textS)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(opts, id: \.self) { opt in
-                            let label = opt.isEmpty ? "None" : opt
+                            let label    = opt.isEmpty ? "None" : opt
                             let selected = selection.wrappedValue == opt
                             Button { selection.wrappedValue = opt } label: {
                                 Text(label)
-                                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                                    .font(Theme.courier(13, selected ? .semibold : .regular))
                                     .foregroundStyle(selected ? .black : Theme.textS)
                                     .padding(.horizontal, 14).padding(.vertical, 7)
-                                    .background(selected ? settings.accentColor : Theme.bg2)
+                                    .background(selected ? settings.accentColor : settings.bg2)
                                     .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
@@ -318,9 +329,9 @@ struct EditView: View {
         }
         r.artist = store.artist.trimmingCharacters(in: .whitespaces)
         r.album  = store.album.trimmingCharacters(in: .whitespaces)
-        r.year   = store.year;   r.genre   = store.genre;  r.label  = store.label
-        r.format = store.format; r.country = store.country; r.notes = store.notes
-        r.condition = store.condition; r.colorHex = store.colorHex
+        r.year   = store.year;    r.genre     = store.genre;  r.rpm    = store.rpm
+        r.label  = store.label;   r.format    = store.format; r.country = store.country
+        r.notes  = store.notes;   r.condition = store.condition; r.colorHex = store.colorHex
         if let d = store.coverData { r.coverData = d }
         r.paidPrice    = Double(store.paidPrice)
         r.currentValue = Double(store.curValue)

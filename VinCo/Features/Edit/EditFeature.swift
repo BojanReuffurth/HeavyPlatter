@@ -10,9 +10,9 @@ struct EditFeature {
         var record:     Record? = nil
         var isWishlist: Bool    = false
 
-        var artist    = ""; var album   = ""; var year      = ""
-        var genre     = ""; var label   = ""; var format    = ""
-        var country   = ""; var notes   = ""; var condition = "VG"
+        var artist    = ""; var album     = ""; var year      = ""
+        var genre     = ""; var rpm       = ""; var label     = ""
+        var format    = ""; var country   = ""; var notes     = ""; var condition = "VG"
         var colorHex  = Record.randomColor()
         var coverData: Data? = nil
         var paidPrice = ""; var curValue = ""
@@ -63,12 +63,11 @@ struct EditFeature {
             switch action {
             case .appeared:
                 guard let r = state.record else { return .none }
-                state.artist = r.artist; state.album  = r.album;  state.year    = r.year
-                state.genre  = r.genre;  state.label  = r.label;  state.format  = r.format
-                state.country = r.country; state.notes = r.notes; state.condition = r.condition
-                state.colorHex = r.colorHex; state.coverData = r.coverData
-                state.discogsId = r.discogsId
-                state.tracks = r.tracks
+                state.artist    = r.artist;  state.album   = r.album;   state.year      = r.year
+                state.genre     = r.genre;   state.rpm     = r.rpm;     state.label     = r.label
+                state.format    = r.format;  state.country = r.country; state.notes     = r.notes
+                state.condition = r.condition; state.colorHex = r.colorHex; state.coverData = r.coverData
+                state.discogsId = r.discogsId; state.tracks = r.tracks
                 if let p = r.paidPrice    { state.paidPrice = String(format: "%.2f", p) }
                 if let v = r.currentValue { state.curValue  = String(format: "%.2f", v) }
                 return .none
@@ -80,7 +79,6 @@ struct EditFeature {
                 guard !q.isEmpty else { return .none }
                 state.searching = true; state.results = []
                 return .run { [q] send in
-                    // Read token from UserDefaults so Discogs auth works
                     let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
                     let r = await discogs.search(q, token)
                     await send(.resultsReceived(r))
@@ -101,8 +99,6 @@ struct EditFeature {
                 if !r.genre.isEmpty && state.genre.isEmpty { state.genre = r.genre }
                 state.discogsId = r.id > 0 ? r.id : nil
                 state.results = []; state.query = ""
-
-                // Fetch art, market price, and tracklist in parallel
                 let rid = r.id
                 return .merge(
                     .send(.fetchArtTapped),
@@ -130,25 +126,19 @@ struct EditFeature {
                 }
 
             case .artReceived(let data):
-                state.coverData = data
-                state.fetchingArt = false
-                // Auto-derive vinyl label colour from the cover art
+                state.coverData = data; state.fetchingArt = false
                 if let data = data, let hex = ColorExtractor.dominant(from: data) {
                     state.colorHex = hex
                 }
                 return .none
 
             case .priceReceived(let price):
-                // Only auto-fill if user hasn't entered a value yet
-                if state.curValue.isEmpty {
-                    state.curValue = String(format: "%.2f", price)
-                }
+                if state.curValue.isEmpty { state.curValue = String(format: "%.2f", price) }
                 return .none
 
             case .fetchTracksTapped:
                 guard !state.artist.isEmpty || !state.album.isEmpty else { return .none }
-                state.fetchingTracks = true
-                state.tracks = []
+                state.fetchingTracks = true; state.tracks = []
                 let ar = state.artist, al = state.album
                 return .run { send in
                     let res = await iTunes.fetch(ar, al)
@@ -165,7 +155,6 @@ struct EditFeature {
 
             case .deleteTrack(let offsets):
                 state.tracks.remove(atOffsets: offsets)
-                // Re-number
                 for i in state.tracks.indices { state.tracks[i].number = i + 1 }
                 return .none
 

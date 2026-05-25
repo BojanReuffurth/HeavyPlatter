@@ -11,6 +11,13 @@ struct VinCoApp: App {
     }
 
     @State private var settings = Settings()
+    /// App-level model container — shared with the view hierarchy via .modelContainer(modelContainer).
+    @State private var modelContainer: ModelContainer = {
+        do { return try ModelContainer(for: Record.self) }
+        catch { fatalError("SwiftData ModelContainer failed: \(error)") }
+    }()
+
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         AppearanceSetup.apply()
@@ -19,9 +26,20 @@ struct VinCoApp: App {
     var body: some Scene {
         WindowGroup {
             AppView(store: VinCoApp.store)
-                .modelContainer(for: Record.self)
+                .modelContainer(modelContainer)
                 .environment(settings)
-            // preferredColorScheme is applied inside AppView from settings.preferredScheme
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background {
+                writeAutoBackup()
+            }
+        }
+    }
+
+    /// Writes the continuous auto-backup to the Documents directory when the app backgrounds.
+    @MainActor
+    private func writeAutoBackup() {
+        let records = (try? modelContainer.mainContext.fetch(FetchDescriptor<Record>())) ?? []
+        BackupManager.writeAutoBackup(records: records)
     }
 }

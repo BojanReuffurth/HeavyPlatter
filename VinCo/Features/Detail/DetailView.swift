@@ -22,9 +22,10 @@ struct DetailView: View {
                     trackBody
                 }
             }
-            .background(Theme.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .background(settings.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.bg1, for: .navigationBar)
+            .toolbarBackground(settings.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar { navBar }
             .sheet(item: $store.scope(state: \.edit, action: \.edit)) { s in
@@ -53,14 +54,14 @@ struct DetailView: View {
                         }
                         .onTapGesture { store.send(.toggleFullArt) }
                 } else {
-                    ZStack { Theme.bg1; VinylView(color: rec.colorHex).padding(60) }
+                    ZStack { settings.bg1; VinylView(color: rec.colorHex).padding(60) }
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 310).clipped()
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(rec.album).font(.system(size: 22, weight: .bold))
-                Text(rec.artist).font(.system(size: 16)).opacity(0.82)
+                Text(rec.album).font(Theme.courier(22, .bold))
+                Text(rec.artist).font(Theme.courier(16)).opacity(0.82)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16).padding(.bottom, 16).padding(.top, 80)
@@ -71,40 +72,41 @@ struct DetailView: View {
     private var chipRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(rec.year,      "calendar",             !rec.year.isEmpty)
-                chip(rec.condition, "checkmark.seal.fill",  !rec.condition.isEmpty, accent: true)
-                chip(rec.genre,     "music.note",           !rec.genre.isEmpty)
-                chip(rec.label,     "building.2",           !rec.label.isEmpty)
-                chip(rec.format,    "opticaldisc",          !rec.format.isEmpty)
-                chip(rec.country,   "globe",                !rec.country.isEmpty)
-                if let p = rec.paidPrice    { chip("\(settings.currency)\(Int(p)) paid",  "eurosign.circle", true) }
-                if let v = rec.currentValue { chip("\(settings.currency)\(Int(v)) value", "chart.line.uptrend.xyaxis", true) }
+                chip(rec.year,      "calendar",                !rec.year.isEmpty)
+                chip(rec.condition, "checkmark.seal.fill",     !rec.condition.isEmpty, accent: true)
+                chip(rec.genre,     "music.note",              !rec.genre.isEmpty)
+                chip(rec.rpm.isEmpty ? "" : "\(rec.rpm) RPM", "dial.low", !rec.rpm.isEmpty)
+                chip(rec.label,     "building.2",              !rec.label.isEmpty)
+                chip(rec.format,    "opticaldisc",             !rec.format.isEmpty)
+                chip(rec.country,   "globe",                   !rec.country.isEmpty)
+                if let p = rec.paidPrice    { chip("\(settings.currency) \(Int(p)) paid",  "eurosign.circle", true) }
+                if let v = rec.currentValue { chip("\(settings.currency) \(Int(v)) value", "chart.line.uptrend.xyaxis", true) }
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
         }
-        .background(Theme.bg1)
+        .background(settings.bg1)
     }
 
     @ViewBuilder
     private func chip(_ text: String, _ icon: String, _ show: Bool, accent: Bool = false) -> some View {
         if show {
             Label(text, systemImage: icon)
-                .font(.system(size: 12, weight: .medium))
+                .font(Theme.courier(12, .medium))
                 .foregroundStyle(accent ? settings.accentColor : Theme.textS)
                 .padding(.horizontal, 11).padding(.vertical, 6)
-                .background(Theme.bg2).clipShape(Capsule())
+                .background(settings.bg2).clipShape(Capsule())
         }
     }
 
     private var notesBlock: some View {
-        Text(rec.notes).font(.system(size: 14)).foregroundStyle(Theme.textS)
-            .frame(maxWidth: .infinity, alignment: .leading).padding(16).background(Theme.bg1)
+        Text(rec.notes).font(Theme.courier(14)).foregroundStyle(Theme.textS)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(16).background(settings.bg1)
     }
 
     private var trackHeader: some View {
         HStack {
             Text("TRACKLIST")
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .font(Theme.courier(11, .semibold))
                 .foregroundStyle(Theme.textT)
             Spacer()
             if store.isFetching {
@@ -123,13 +125,13 @@ struct DetailView: View {
     private var trackBody: some View {
         if let err = audio.errorMsg {
             Text(err)
-                .font(.system(size: 12)).foregroundStyle(.red)
+                .font(Theme.courier(12)).foregroundStyle(.red)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16).padding(.vertical, 6)
         }
         if rec.tracks.isEmpty && !store.isFetching {
             Text("No tracklist — tap ↓ to load.")
-                .font(.system(size: 13)).foregroundStyle(Theme.textT)
+                .font(Theme.courier(13)).foregroundStyle(Theme.textT)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16).padding(.bottom, 32)
         } else {
@@ -146,7 +148,7 @@ struct DetailView: View {
                     }
                 }
             }
-            .background(Theme.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+            .background(settings.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
             .padding(.horizontal, 14).padding(.bottom, 32)
         }
     }
@@ -193,11 +195,11 @@ struct TrackRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Text("\(track.number > 0 ? track.number : index+1)")
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .font(Theme.courier(12, .medium))
                 .foregroundStyle(Theme.textT).frame(width: 28, alignment: .trailing)
             VStack(alignment: .leading, spacing: 5) {
                 Text(track.name)
-                    .font(.system(size: 14))
+                    .font(Theme.courier(14))
                     .foregroundStyle(playing ? settings.accentColor : Theme.textP).lineLimit(1)
                 if playing {
                     GeometryReader { g in
@@ -211,7 +213,7 @@ struct TrackRow: View {
             }
             Spacer()
             Text(track.durationStr)
-                .font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.textT)
+                .font(Theme.courier(12)).foregroundStyle(Theme.textT)
             if track.hasPreview {
                 Button(action: toggle) {
                     Image(systemName: playing ? "pause.circle.fill" : "play.circle.fill")

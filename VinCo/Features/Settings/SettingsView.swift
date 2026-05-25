@@ -1,12 +1,21 @@
 import SwiftUI
 import SwiftData
 import ComposableArchitecture
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Bindable var store: StoreOf<SettingsFeature>
     @Environment(\.modelContext) private var ctx
     @Environment(Settings.self) private var settings
     @Query private var all: [Record]
+
+    // MARK: – Transient UI state
+    @State private var iconFeedback:  String? = nil
+    @State private var currencyMsg:   String? = nil
+    @State private var converting:    Bool    = false
+    @State private var importMsg:     String? = nil
+    @State private var showImporter:  Bool    = false
+    @State private var autoBackupMsg: String? = nil
 
     var body: some View {
         NavigationStack {
@@ -28,10 +37,12 @@ struct SettingsView: View {
                     .animation(.easeInOut(duration: 0.15), value: store.tab)
                 }
                 .scrollIndicators(.hidden)
+                .scrollDismissesKeyboard(.interactively)
             }
-            .background(Theme.bg0.ignoresSafeArea())
+            .background(settings.bg0.ignoresSafeArea())
             .navigationTitle("Settings")
-            .toolbarBackground(Theme.bg1, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(settings.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -39,9 +50,16 @@ struct SettingsView: View {
                 }
             }
         }
+        .fileImporter(
+            isPresented: $showImporter,
+            allowedContentTypes: [.json, .commaSeparatedText, .text],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result: result)
+        }
     }
 
-    // MARK: – Horizontal tab bar (matches PWA look)
+    // MARK: – Horizontal tab bar
     private var tabBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
@@ -49,7 +67,7 @@ struct SettingsView: View {
                     Button { store.send(.tabSelected(t)) } label: {
                         VStack(spacing: 6) {
                             Text(t.rawValue)
-                                .font(.system(size: 13, weight: store.tab == t ? .semibold : .regular))
+                                .font(Theme.courier(13, store.tab == t ? .semibold : .regular))
                                 .foregroundStyle(store.tab == t ? settings.accentColor : Theme.textS)
                             Rectangle()
                                 .fill(store.tab == t ? settings.accentColor : Color.clear)
@@ -61,25 +79,25 @@ struct SettingsView: View {
                 }
             }
         }
-        .frame(height: 46).background(Theme.bg1)
+        .frame(height: 46).background(settings.bg1)
     }
-
-    @State private var iconFeedback: String? = nil
 
     // MARK: – LOOK
     private var lookTab: some View {
         @Bindable var settings = settings
         return VStack(spacing: 20) {
+
+            // Color Scheme
             RBSection("Color Scheme") {
                 RBRow(divider: false) {
                     HStack(spacing: 10) {
                         ForEach([("System","system"),("Light","light"),("Dark","dark")], id: \.1) { lbl, key in
                             Button { settings.schemeKey = key } label: {
                                 Text(lbl)
-                                    .font(.system(size: 13, weight: settings.schemeKey == key ? .semibold : .regular))
+                                    .font(Theme.courier(13, settings.schemeKey == key ? .semibold : .regular))
                                     .foregroundStyle(settings.schemeKey == key ? .black : Theme.textS)
                                     .padding(.horizontal, 16).padding(.vertical, 8)
-                                    .background(settings.schemeKey == key ? settings.accentColor : Theme.bg2)
+                                    .background(settings.schemeKey == key ? settings.accentColor : settings.bg2)
                                     .clipShape(Capsule())
                             }.buttonStyle(.plain)
                         }
@@ -87,6 +105,61 @@ struct SettingsView: View {
                 }
             }
 
+            // Palette (background style)
+            RBSection("Background Style") {
+                RBRow(divider: false) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(ThemePalette.presets, id: \.name) { palette in
+                                    let selected = settings.paletteKey == palette.name
+                                    Button { settings.paletteKey = palette.name } label: {
+                                        VStack(spacing: 6) {
+                                            // 4-color swatch
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(palette.bg0Dark)
+                                                    .frame(width: 54, height: 54)
+                                                VStack(spacing: 2) {
+                                                    HStack(spacing: 2) {
+                                                        RoundedRectangle(cornerRadius: 3)
+                                                            .fill(palette.bg1Dark)
+                                                            .frame(width: 22, height: 22)
+                                                        RoundedRectangle(cornerRadius: 3)
+                                                            .fill(palette.bg2Dark)
+                                                            .frame(width: 22, height: 22)
+                                                    }
+                                                    HStack(spacing: 2) {
+                                                        RoundedRectangle(cornerRadius: 3)
+                                                            .fill(palette.bg2Dark)
+                                                            .frame(width: 22, height: 22)
+                                                        RoundedRectangle(cornerRadius: 3)
+                                                            .fill(palette.bg3Dark)
+                                                            .frame(width: 22, height: 22)
+                                                    }
+                                                }
+                                            }
+                                            .overlay {
+                                                if selected {
+                                                    RoundedRectangle(cornerRadius: 10)
+                                                        .stroke(settings.accentColor, lineWidth: 2)
+                                                }
+                                            }
+                                            Text(palette.name)
+                                                .font(Theme.courier(10, selected ? .semibold : .regular))
+                                                .foregroundStyle(selected ? settings.accentColor : Theme.textT)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+            }
+
+            // Accent Color
             RBSection("Accent Color") {
                 RBRow(divider: false) {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -105,6 +178,7 @@ struct SettingsView: View {
                 }
             }
 
+            // App Icon
             RBSection("App Icon") {
                 RBRow(divider: false) {
                     VStack(alignment: .leading, spacing: 10) {
@@ -112,16 +186,15 @@ struct SettingsView: View {
                             MiniVinylIcon(color: Color(hex: settings.iconAccentHex), size: 28)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("App Icon Color")
-                                    .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                                    .font(Theme.courier(14)).foregroundStyle(Theme.textP)
                                 Text("Changes the label colour on your home screen icon")
-                                    .font(.system(size: 12)).foregroundStyle(Theme.textT)
+                                    .font(Theme.courier(12)).foregroundStyle(Theme.textT)
                             }
                         }
                         if let msg = iconFeedback {
                             Text(msg)
-                                .font(.system(size: 11)).foregroundStyle(
-                                    msg.contains("✓") ? .green : Theme.textT
-                                )
+                                .font(Theme.courier(11))
+                                .foregroundStyle(msg.contains("✓") ? .green : Theme.textT)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -141,36 +214,51 @@ struct SettingsView: View {
                 }
             }
 
+            // Currency
             RBSection("Currency") {
-                RBRow(divider: false) {
+                RBRow(divider: !converting && currencyMsg == nil) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(Settings.currencies, id: \.self) { c in
-                                Button { settings.currency = c } label: {
+                                Button {
+                                    guard c != settings.currency, !converting else { return }
+                                    switchCurrency(to: c)
+                                } label: {
                                     Text(c)
-                                        .font(.system(size: 14, weight: settings.currency == c ? .semibold : .regular))
+                                        .font(Theme.courier(14, settings.currency == c ? .semibold : .regular))
                                         .foregroundStyle(settings.currency == c ? .black : Theme.textS)
-                                        .frame(width: 44, height: 36)
-                                        .background(settings.currency == c ? settings.accentColor : Theme.bg2)
+                                        .frame(width: 50, height: 36)
+                                        .background(settings.currency == c ? settings.accentColor : settings.bg2)
                                         .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }.buttonStyle(.plain)
+                            }
+                            if converting {
+                                ProgressView().tint(settings.accentColor).scaleEffect(0.8)
                             }
                         }.padding(.vertical, 4)
                     }
                 }
+                if let msg = currencyMsg {
+                    RBRow(divider: false) {
+                        Text(msg)
+                            .font(Theme.courier(12))
+                            .foregroundStyle(msg.contains("✓") || msg.contains("Converted") ? .green : Theme.textT)
+                    }
+                }
             }
 
+            // Cards
             RBSection("Cards") {
                 RBRow {
                     HStack {
-                        Text("Show Artwork").font(.system(size: 14)).foregroundStyle(Theme.textP)
+                        Text("Show Artwork").font(Theme.courier(14)).foregroundStyle(Theme.textP)
                         Spacer()
                         Toggle("", isOn: $settings.showArtwork).tint(settings.accentColor)
                     }
                 }
                 RBRow(divider: false) {
                     HStack {
-                        Text("Layout").font(.system(size: 14)).foregroundStyle(Theme.textP)
+                        Text("Layout").font(Theme.courier(14)).foregroundStyle(Theme.textP)
                         Spacer()
                         HStack(spacing: 8) {
                             ForEach([("grid","square.grid.2x2"),("list","list.bullet")], id: \.0) { val, icon in
@@ -178,7 +266,7 @@ struct SettingsView: View {
                                     Image(systemName: icon).font(.system(size: 15))
                                         .foregroundStyle(settings.layout == val ? settings.accentColor : Theme.textT)
                                         .padding(8)
-                                        .background(settings.layout == val ? Theme.bg3 : Color.clear)
+                                        .background(settings.layout == val ? settings.bg2 : Color.clear)
                                         .clipShape(RoundedRectangle(cornerRadius: 8))
                                 }.buttonStyle(.plain)
                             }
@@ -197,17 +285,16 @@ struct SettingsView: View {
                 RBRow {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("USERNAME")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Theme.textT)
+                            .font(Theme.courier(11, .semibold)).foregroundStyle(Theme.textT)
                         TextField("Choose a username…", text: $settings.username)
-                            .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                            .font(Theme.courier(14)).foregroundStyle(Theme.textP)
                             .tint(settings.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
                 }
                 RBRow(divider: false) {
                     HStack {
-                        Text("Public Profile").font(.system(size: 14)).foregroundStyle(Theme.textP)
+                        Text("Public Profile").font(Theme.courier(14)).foregroundStyle(Theme.textP)
                         Spacer()
                         Toggle("", isOn: $settings.isPublic).tint(settings.accentColor)
                     }
@@ -217,7 +304,7 @@ struct SettingsView: View {
                 RBSection("Profile URL") {
                     RBRow(divider: false) {
                         Text("vinco.app/u/\(settings.username)")
-                            .font(.system(size: 13, design: .monospaced))
+                            .font(Theme.courier(13))
                             .foregroundStyle(settings.accentColor)
                             .lineLimit(1)
                     }
@@ -232,7 +319,7 @@ struct SettingsView: View {
             RBSection("Built-in") {
                 ForEach(Array(Settings.builtIn.enumerated()), id: \.element) { i, g in
                     RBRow(divider: i < Settings.builtIn.count - 1) {
-                        Text(g).font(.system(size: 14)).foregroundStyle(Theme.textS)
+                        Text(g).font(Theme.courier(14)).foregroundStyle(Theme.textS)
                     }
                 }
             }
@@ -240,13 +327,13 @@ struct SettingsView: View {
                 if settings.customGenres.isEmpty {
                     RBRow(divider: true) {
                         Text("No custom genres yet.")
-                            .font(.system(size: 13)).foregroundStyle(Theme.textT)
+                            .font(Theme.courier(13)).foregroundStyle(Theme.textT)
                     }
                 } else {
                     ForEach(Array(settings.customGenres.enumerated()), id: \.element) { i, g in
                         RBRow {
                             HStack {
-                                Text(g).font(.system(size: 14)).foregroundStyle(Theme.textP)
+                                Text(g).font(Theme.courier(14)).foregroundStyle(Theme.textP)
                                 Spacer()
                                 Button {
                                     var list = settings.customGenres
@@ -262,11 +349,11 @@ struct SettingsView: View {
                 RBRow(divider: false) {
                     HStack {
                         TextField("Add genre…", text: $store.newGenre)
-                            .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                            .font(Theme.courier(14)).foregroundStyle(Theme.textP)
                             .tint(settings.accentColor)
                             .onSubmit { addGenre() }
                         Button("Add") { addGenre() }
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(Theme.courier(13, .semibold))
                             .foregroundStyle(store.newGenre.trimmingCharacters(in: .whitespaces).isEmpty
                                              ? Theme.textT : settings.accentColor)
                             .disabled(store.newGenre.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -279,34 +366,105 @@ struct SettingsView: View {
     // MARK: – BACKUP
     private var backupTab: some View {
         VStack(spacing: 20) {
+            // Export
             RBSection("Export") {
+                RBRow {
+                    Button { exportJSON() } label: {
+                        HStack {
+                            Image(systemName: "arrow.up.doc.fill").foregroundStyle(settings.accentColor)
+                            Text("Export Backup (JSON)")
+                                .font(Theme.courier(14)).foregroundStyle(Theme.textP)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12)).foregroundStyle(Theme.textT)
+                        }
+                    }.buttonStyle(.plain)
+                }
                 RBRow(divider: false) {
                     Button { exportCSV() } label: {
                         HStack {
-                            Image(systemName: "arrow.up.doc").foregroundStyle(settings.accentColor)
-                            Text("Export Collection to CSV")
-                                .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                            Image(systemName: "tablecells").foregroundStyle(settings.accentColor)
+                            Text("Export Collection (CSV)")
+                                .font(Theme.courier(14)).foregroundStyle(Theme.textP)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12)).foregroundStyle(Theme.textT)
+                        }
+                    }.buttonStyle(.plain)
+                }
+            }
+
+            // Import
+            RBSection("Import") {
+                RBRow(divider: false) {
+                    Button { showImporter = true } label: {
+                        HStack {
+                            Image(systemName: "arrow.down.doc.fill").foregroundStyle(settings.accentColor)
+                            Text("Import Backup or CSV")
+                                .font(Theme.courier(14)).foregroundStyle(Theme.textP)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12)).foregroundStyle(Theme.textT)
+                        }
+                    }.buttonStyle(.plain)
+                }
+                if let msg = importMsg {
+                    RBRow(divider: false) {
+                        Text(msg)
+                            .font(Theme.courier(12))
+                            .foregroundStyle(msg.contains("✓") || msg.contains("imported") ? .green : .red)
+                    }
+                }
+            }
+
+            // Auto-Backup
+            RBSection("Auto-Backup") {
+                RBRow {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Continuous local backup").font(Theme.courier(14)).foregroundStyle(Theme.textP)
+                            Text("Saved automatically when app goes to background")
+                                .font(Theme.courier(11)).foregroundStyle(Theme.textT)
+                        }
+                        Spacer()
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green).font(.system(size: 16))
+                    }
+                }
+                RBRow(divider: false) {
+                    Button {
+                        BackupManager.writeAutoBackup(records: all)
+                        autoBackupMsg = "Backup written ✓"
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { autoBackupMsg = nil }
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.clockwise").foregroundStyle(settings.accentColor)
+                            Text(autoBackupMsg ?? "Write Backup Now")
+                                .font(Theme.courier(13))
+                                .foregroundStyle(autoBackupMsg != nil ? .green : settings.accentColor)
                             Spacer()
                         }
                     }.buttonStyle(.plain)
                 }
             }
+
+            // Stats
             RBSection("Stats") {
                 RBRow {
                     HStack {
-                        Text("Collection").font(.system(size: 14)).foregroundStyle(Theme.textS)
+                        Text("Collection").font(Theme.courier(14)).foregroundStyle(Theme.textS)
                         Spacer()
                         Text("\(all.filter{!$0.isWishlist}.count) records")
-                            .font(.system(size: 13, design: .monospaced))
+                            .font(Theme.courier(13))
                             .foregroundStyle(settings.accentColor)
                     }
                 }
                 RBRow(divider: false) {
                     HStack {
-                        Text("Wishlist").font(.system(size: 14)).foregroundStyle(Theme.textS)
+                        Text("Wishlist").font(Theme.courier(14)).foregroundStyle(Theme.textS)
                         Spacer()
                         Text("\(all.filter{$0.isWishlist}.count) records")
-                            .font(.system(size: 13, design: .monospaced))
+                            .font(Theme.courier(13))
                             .foregroundStyle(settings.accentColor)
                     }
                 }
@@ -322,34 +480,32 @@ struct SettingsView: View {
                 RBRow {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("PERSONAL TOKEN")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Theme.textT)
+                            .font(Theme.courier(11, .semibold)).foregroundStyle(Theme.textT)
                         SecureField("Paste token here…", text: $settings.discogsToken)
-                            .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                            .font(Theme.courier(14)).foregroundStyle(Theme.textP)
                             .tint(settings.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
                 }
                 RBRow(divider: false) {
                     Text("Optional — raises rate limit 25 → 60 req/min.\nGet one free at discogs.com/settings/developers")
-                        .font(.system(size: 12)).foregroundStyle(Theme.textT)
+                        .font(Theme.courier(12)).foregroundStyle(Theme.textT)
                 }
             }
             RBSection("Spotify") {
                 RBRow {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("CLIENT ID")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Theme.textT)
+                            .font(Theme.courier(11, .semibold)).foregroundStyle(Theme.textT)
                         SecureField("Paste Client ID here…", text: $settings.spotifyId)
-                            .font(.system(size: 14)).foregroundStyle(Theme.textP)
+                            .font(Theme.courier(14)).foregroundStyle(Theme.textP)
                             .tint(settings.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
                 }
                 RBRow(divider: false) {
                     Text("Create a free app at developer.spotify.com, add your redirect URI, then paste the Client ID above.")
-                        .font(.system(size: 12)).foregroundStyle(Theme.textT)
+                        .font(Theme.courier(12)).foregroundStyle(Theme.textT)
                 }
             }
         }
@@ -363,22 +519,22 @@ struct SettingsView: View {
                     RBRow(divider: false) {
                         HStack(spacing: 10) {
                             if store.batchRunning { ProgressView().tint(settings.accentColor) }
-                            Text(msg).font(.system(size: 13)).foregroundStyle(settings.accentColor)
+                            Text(msg).font(Theme.courier(13)).foregroundStyle(settings.accentColor)
                         }
                     }
                 }
             }
             RBSection("Batch Operations") {
-                toolBtn("Fetch Cover Art for All",     icon: "photo.badge.magnifyingglass") { batchCovers() }
-                toolBtn("Fetch Tracklists for All",    icon: "music.note.list")             { batchTracks() }
-                toolBtn("Refresh Values (Discogs)",    icon: "chart.line.uptrend.xyaxis", last: true) { /* Phase 2 */ }
+                toolBtn("Fetch Cover Art for All",   icon: "photo.badge.magnifyingglass") { batchCovers() }
+                toolBtn("Fetch Tracklists for All",  icon: "music.note.list")             { batchTracks() }
+                toolBtn("Refresh Values (Discogs)",  icon: "chart.line.uptrend.xyaxis", last: true) { /* Phase 2 */ }
             }
             RBSection("Danger Zone") {
                 RBRow(divider: false) {
                     Button(role: .destructive) { deleteAll() } label: {
                         HStack {
                             Image(systemName: "trash").foregroundStyle(.red)
-                            Text("Delete All Records").font(.system(size: 14)).foregroundStyle(.red)
+                            Text("Delete All Records").font(Theme.courier(14)).foregroundStyle(.red)
                             Spacer()
                         }
                     }.buttonStyle(.plain)
@@ -392,7 +548,7 @@ struct SettingsView: View {
             Button(action: action) {
                 HStack {
                     Image(systemName: icon).foregroundStyle(settings.accentColor)
-                    Text(label).font(.system(size: 14)).foregroundStyle(Theme.textP)
+                    Text(label).font(Theme.courier(14)).foregroundStyle(Theme.textP)
                     Spacer()
                     Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Theme.textT)
                 }
@@ -400,7 +556,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: – Helpers
+    // MARK: – App Icon
     private func applyAppIcon(name: String, hex: String) {
         settings.iconAccentHex = hex
         guard UIApplication.shared.supportsAlternateIcons else {
@@ -413,13 +569,31 @@ struct SettingsView: View {
                 try await UIApplication.shared.setAlternateIconName(iconName)
                 await MainActor.run { iconFeedback = "Icon changed to \(name) ✓" }
             } catch {
-                await MainActor.run {
-                    iconFeedback = "Change failed: \(error.localizedDescription)"
-                }
+                await MainActor.run { iconFeedback = "Change failed: \(error.localizedDescription)" }
             }
         }
     }
 
+    // MARK: – Currency conversion
+    private func switchCurrency(to newSymbol: String) {
+        let oldCode = settings.currencyCode
+        let newCode = Settings.code(for: newSymbol)
+        settings.currency = newSymbol   // update display immediately
+        converting = true
+        currencyMsg = nil
+        Task {
+            let msg = await CurrencyService.convertAll(
+                records: all, from: oldCode, to: newCode
+            )
+            await MainActor.run {
+                converting = false
+                currencyMsg = msg + " ✓"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) { currencyMsg = nil }
+            }
+        }
+    }
+
+    // MARK: – Genre
     private func addGenre() {
         let g = store.newGenre.trimmingCharacters(in: .whitespaces)
         guard !g.isEmpty, !settings.allGenres.contains(g) else { return }
@@ -427,10 +601,20 @@ struct SettingsView: View {
         store.newGenre = ""
     }
 
+    // MARK: – Export
+    private func exportJSON() {
+        guard let url = BackupManager.exportToTemp(records: all) else { return }
+        present(url)
+    }
+
     private func exportCSV() {
         let col = all.filter { !$0.isWishlist }
         let wl  = all.filter {  $0.isWishlist }
         guard let url = CSVExporter.saveToTemp(CSVExporter.export(collection: col, wishlist: wl)) else { return }
+        present(url)
+    }
+
+    private func present(_ url: URL) {
         let av = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         if let scene  = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = scene.windows.first,
@@ -439,10 +623,38 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: – Import
+    private func handleImport(result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let err):
+            importMsg = "Import failed: \(err.localizedDescription)"
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            guard url.startAccessingSecurityScopedResource() else {
+                importMsg = "Permission denied for file."
+                return
+            }
+            defer { url.stopAccessingSecurityScopedResource() }
+            guard let data = try? Data(contentsOf: url) else {
+                importMsg = "Could not read file."
+                return
+            }
+            let (updated, inserted, errMsg) = BackupManager.importBackup(data: data, context: ctx)
+            if let e = errMsg {
+                importMsg = e
+            } else {
+                importMsg = "Imported \(inserted) new, updated \(updated) ✓"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { importMsg = nil }
+            }
+        }
+    }
+
+    // MARK: – Delete all
     private func deleteAll() {
         all.forEach { ctx.delete($0) }
     }
 
+    // MARK: – Batch covers
     private func batchCovers() {
         let missing = all.filter { $0.coverData == nil }
         guard !missing.isEmpty else {
@@ -453,7 +665,7 @@ struct SettingsView: View {
             for (i, r) in missing.enumerated() {
                 let res = await iTunesClient.liveValue.fetch(r.artist, r.album)
                 if let u = res.coverURL, let url = URL(string: u),
-                   let (data,_) = try? await URLSession.shared.data(from: url) {
+                   let (data, _) = try? await URLSession.shared.data(from: url) {
                     await MainActor.run { r.coverData = data }
                 }
                 try? await Task.sleep(nanoseconds: 300_000_000)
@@ -461,12 +673,11 @@ struct SettingsView: View {
                     _ = store.send(.batchProgress("Fetching covers… \(i+1) / \(missing.count)"))
                 }
             }
-            await MainActor.run {
-                _ = store.send(.batchDone("Done — \(missing.count) records processed."))
-            }
+            await MainActor.run { _ = store.send(.batchDone("Done — \(missing.count) records processed.")) }
         }
     }
 
+    // MARK: – Batch tracks
     private func batchTracks() {
         let missing = all.filter { $0.tracks.isEmpty }
         guard !missing.isEmpty else {
@@ -487,9 +698,7 @@ struct SettingsView: View {
                     _ = store.send(.batchProgress("Fetching tracklists… \(i+1) / \(missing.count)"))
                 }
             }
-            await MainActor.run {
-                _ = store.send(.batchDone("Done — \(missing.count) records processed."))
-            }
+            await MainActor.run { _ = store.send(.batchDone("Done — \(missing.count) records processed.")) }
         }
     }
 }

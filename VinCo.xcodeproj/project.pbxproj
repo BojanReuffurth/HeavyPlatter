@@ -36,6 +36,8 @@
 		EFF0743E2FC329A8001D748E /* CollectionFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0740C2FC329A8001D748E /* CollectionFeature.swift */; };
 		EFF0743F2FC329A8001D748E /* EditFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074122FC329A8001D748E /* EditFeature.swift */; };
 		EFF074402FC329A8001D748E /* ColorExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF074412FC329A8001D748E /* ColorExtractor.swift */; };
+		B4DC4092BE574F8F8EE9C306 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39417F2E195E44B4BA2F2E6E /* BackupManager.swift */; };
+		961CF23DA37A428691273779 /* CurrencyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197952D01F9D48EA983E689E /* CurrencyService.swift */; };
 		EFF074452FC329A8001D748E /* VinCo-Icon-Sky.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074442FC329A8001D748E /* VinCo-Icon-Sky.png */; };
 		EFF074472FC329A8001D748E /* VinCo-Icon-Violet.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074462FC329A8001D748E /* VinCo-Icon-Violet.png */; };
 		EFF074492FC329A8001D748E /* VinCo-Icon-Mint.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074482FC329A8001D748E /* VinCo-Icon-Mint.png */; };
@@ -91,6 +93,8 @@
 		EFF074032FC329A8001D748E /* DiscogsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscogsClient.swift; sourceTree = "<group>"; };
 		EFF074042FC329A8001D748E /* iTunesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTunesClient.swift; sourceTree = "<group>"; };
 		EFF074052FC329A8001D748E /* MusicBrainzClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicBrainzClient.swift; sourceTree = "<group>"; };
+		39417F2E195E44B4BA2F2E6E /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
+		197952D01F9D48EA983E689E /* CurrencyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyService.swift; sourceTree = "<group>"; };
 		EFF074082FC329A8001D748E /* AppFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
 		EFF074092FC329A8001D748E /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		EFF0740B2FC329A8001D748E /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
@@ -272,6 +276,8 @@
 				EFF074032FC329A8001D748E /* DiscogsClient.swift */,
 				EFF074042FC329A8001D748E /* iTunesClient.swift */,
 				EFF074052FC329A8001D748E /* MusicBrainzClient.swift */,
+				39417F2E195E44B4BA2F2E6E /* BackupManager.swift */,
+				197952D01F9D48EA983E689E /* CurrencyService.swift */,
 			);
 			path = Clients;
 			sourceTree = "<group>";
@@ -522,6 +528,8 @@
 				EFF0743E2FC329A8001D748E /* CollectionFeature.swift in Sources */,
 				EFF0743F2FC329A8001D748E /* EditFeature.swift in Sources */,
 				EFF074402FC329A8001D748E /* ColorExtractor.swift in Sources */,
+				B4DC4092BE574F8F8EE9C306 /* BackupManager.swift in Sources */,
+				961CF23DA37A428691273779 /* CurrencyService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

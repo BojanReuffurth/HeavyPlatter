@@ -23,7 +23,7 @@ struct AppView: View {
                     .toolbar(.hidden, for: .tabBar)
             }
         }
-        .background(Theme.bg0)
+        .background(settings.bg0)
         .safeAreaInset(edge: .bottom, spacing: 0) { bottomCounts }
         .overlay(alignment: .bottomTrailing) {
             fab.padding(.trailing, 20).padding(.bottom, 16)
@@ -98,7 +98,7 @@ struct AppView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(Theme.bg1)
+        .background(settings.bg1)
     }
 
     // MARK: – Compact stats badge  (2 rows × 3 columns)
@@ -119,7 +119,7 @@ struct AppView: View {
             }
         }
         .padding(.horizontal, 8).padding(.vertical, 5)
-        .background(Theme.bg2)
+        .background(settings.bg2)
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
@@ -173,7 +173,7 @@ struct AppView: View {
             .buttonStyle(.plain)
         }
         .padding(.vertical, 12)
-        .background(Theme.bg1.ignoresSafeArea(edges: .bottom))
+        .background(settings.bg1.ignoresSafeArea(edges: .bottom))
     }
 
     // MARK: – Floating action button

@@ -5,47 +5,76 @@ import ComposableArchitecture
 struct CollectionView: View {
     @Bindable var store: StoreOf<CollectionFeature>
     @Environment(\.modelContext) private var ctx
-    @Environment(Settings.self) private var settings
+    @Environment(Settings.self)  private var settings
 
     @Query(sort: \Record.dateAdded, order: .reverse) private var allRecords: [Record]
 
     private var records: [Record] { allRecords.filter { $0.isWishlist == store.isWishlist } }
-    private var genres: [String] {
-        ["All"] + Set(records.compactMap { $0.genre.isEmpty ? nil : $0.genre }).sorted()
+
+    // MARK: – Available filter options (computed from current records)
+    private var genres:     [String] { options(\.genre) }
+    private var conditions: [String] { options(\.condition) }
+    private var formats:    [String] { options(\.format) }
+    private var countries:  [String] { options(\.country) }
+    private func options(_ kp: KeyPath<Record, String>) -> [String] {
+        ["All"] + Set(records.map { $0[keyPath: kp] }.filter { !$0.isEmpty }).sorted()
     }
+
+    // MARK: – Filtered + sorted list
     private var displayed: [Record] {
         var r = records
         if !store.search.isEmpty {
             r = r.filter { $0.artist.localizedCaseInsensitiveContains(store.search) ||
                            $0.album.localizedCaseInsensitiveContains(store.search) }
         }
-        if store.genre != "All" { r = r.filter { $0.genre == store.genre } }
+        if store.genre     != "All" { r = r.filter { $0.genre     == store.genre     } }
+        if store.condition != "All" { r = r.filter { $0.condition == store.condition } }
+        if store.format    != "All" { r = r.filter { $0.format    == store.format    } }
+        if store.country   != "All" { r = r.filter { $0.country   == store.country   } }
+
         switch store.sortBy {
-        case .dateAdded: r.sort { $0.dateAdded > $1.dateAdded }
+        case .dateAdded: r.sort { $0.dateAdded  > $1.dateAdded }
+        case .dateOld:   r.sort { $0.dateAdded  < $1.dateAdded }
         case .artistAZ:  r.sort { $0.artist.lowercased() < $1.artist.lowercased() }
         case .artistZA:  r.sort { $0.artist.lowercased() > $1.artist.lowercased() }
         case .albumAZ:   r.sort { $0.album.lowercased()  < $1.album.lowercased()  }
+        case .albumZA:   r.sort { $0.album.lowercased()  > $1.album.lowercased()  }
         case .yearAsc:   r.sort { $0.year < $1.year }
         case .yearDesc:  r.sort { $0.year > $1.year }
+        case .valueAsc:  r.sort { ($0.currentValue ?? -1) < ($1.currentValue ?? -1) }
+        case .valueDesc: r.sort { ($0.currentValue ?? -1) > ($1.currentValue ?? -1) }
+        case .paidAsc:   r.sort { ($0.paidPrice ?? -1)    < ($1.paidPrice ?? -1)    }
+        case .paidDesc:  r.sort { ($0.paidPrice ?? -1)    > ($1.paidPrice ?? -1)    }
+        case .gainAsc:   r.sort { gain($0) < gain($1) }
+        case .gainDesc:  r.sort { gain($0) > gain($1) }
+        case .labelAZ:   r.sort { $0.label.lowercased() < $1.label.lowercased() }
+        case .labelZA:   r.sort { $0.label.lowercased() > $1.label.lowercased() }
+        case .condAsc:   r.sort { condOrder($0) < condOrder($1) }
+        case .condDesc:  r.sort { condOrder($0) > condOrder($1) }
         }
         return r
     }
-    private let cols = [GridItem(.adaptive(minimum: 155), spacing: 12)]
+    private func gain(_ r: Record) -> Double {
+        guard let p = r.paidPrice, p > 0, let v = r.currentValue else { return -999 }
+        return (v - p) / p
+    }
+    private let condOrder: [String: Int] = ["M":0,"NM":1,"VG+":2,"VG":3,"G+":4,"G":5,"F":6,"P":7]
+    private func condOrder(_ r: Record) -> Int { condOrder[r.condition] ?? 99 }
 
-    // Flip+zoom overlay state
+    private let cols = [GridItem(.adaptive(minimum: 155), spacing: 12)]
     @State private var expandedRecord: Record? = nil
 
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
                 searchBar
-                filterBar
+                filterSortBar
                 Rectangle().fill(Theme.divide).frame(height: 1)
                 if displayed.isEmpty { emptyState }
                 else if settings.layout == "list" { listContent }
                 else { gridContent }
             }
-            .background(Theme.bg0)
+            .background(settings.bg0)
 
             // Flip+zoom overlay
             if let rec = expandedRecord {
@@ -99,7 +128,6 @@ struct CollectionView: View {
                 }
                 .buttonStyle(.plain)
             }
-            // Share button
             Button { shareCollection() } label: {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 14)).foregroundStyle(Theme.textT)
@@ -107,52 +135,140 @@ struct CollectionView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(Theme.bg2)
+        .background(settings.bg2)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(Theme.bg1)
+        .background(settings.bg1)
     }
 
-    // MARK: – Filter bar
-    private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                Menu {
-                    ForEach(CollectionFeature.SortBy.allCases, id: \.self) { opt in
-                        Button { store.send(.sortSelected(opt)) } label: {
-                            if store.sortBy == opt {
-                                Label(opt.rawValue, systemImage: "checkmark")
-                            } else { Text(opt.rawValue) }
+    // MARK: – Combined filter + sort bar
+    private var filterSortBar: some View {
+        HStack(spacing: 8) {
+            // FILTER funnel
+            Menu {
+                filterMenu(title: "Genre",     options: genres,     current: store.genre)     { store.send(.genreSelected($0)) }
+                filterMenu(title: "Condition", options: conditions, current: store.condition) { store.send(.conditionSelected($0)) }
+                filterMenu(title: "Format",    options: formats,    current: store.format)    { store.send(.formatSelected($0)) }
+                filterMenu(title: "Country",   options: countries,  current: store.country)   { store.send(.countrySelected($0)) }
+                if store.hasActiveFilter {
+                    Divider()
+                    Button(role: .destructive) { store.send(.clearFilters) } label: {
+                        Label("Clear All Filters", systemImage: "xmark.circle")
+                    }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: store.hasActiveFilter
+                          ? "line.3.horizontal.decrease.circle.fill"
+                          : "line.3.horizontal.decrease.circle")
+                        .font(.system(size: 15, weight: .semibold))
+                    if store.hasActiveFilter {
+                        Text("Filtered")
+                            .font(Theme.courier(12, .semibold))
+                    }
+                }
+                .foregroundStyle(store.hasActiveFilter ? settings.accentColor : Theme.textS)
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .background(settings.bg2).clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+            // SORT sub-menus
+            Menu {
+                sortSubMenu(label: "Date Added") {
+                    sortItem(.dateAdded, "Newest first")
+                    sortItem(.dateOld,   "Oldest first")
+                }
+                sortSubMenu(label: "Artist") {
+                    sortItem(.artistAZ, "A → Z")
+                    sortItem(.artistZA, "Z → A")
+                }
+                sortSubMenu(label: "Album") {
+                    sortItem(.albumAZ, "A → Z")
+                    sortItem(.albumZA, "Z → A")
+                }
+                sortSubMenu(label: "Year") {
+                    sortItem(.yearAsc,  "Oldest first ↑")
+                    sortItem(.yearDesc, "Newest first ↓")
+                }
+                sortSubMenu(label: "Value") {
+                    sortItem(.valueAsc,  "Lowest ↑")
+                    sortItem(.valueDesc, "Highest ↓")
+                }
+                sortSubMenu(label: "Paid") {
+                    sortItem(.paidAsc,  "Lowest ↑")
+                    sortItem(.paidDesc, "Highest ↓")
+                }
+                sortSubMenu(label: "Gain") {
+                    sortItem(.gainAsc,  "Lowest ↑")
+                    sortItem(.gainDesc, "Highest ↓")
+                }
+                sortSubMenu(label: "Label") {
+                    sortItem(.labelAZ, "A → Z")
+                    sortItem(.labelZA, "Z → A")
+                }
+                sortSubMenu(label: "Condition") {
+                    sortItem(.condAsc,  "Best first ↑")
+                    sortItem(.condDesc, "Worst first ↓")
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(store.sortBy.rawValue)
+                        .font(Theme.courier(12))
+                        .lineLimit(1)
+                }
+                .foregroundStyle(Theme.textS)
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .background(settings.bg2).clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(settings.bg1)
+    }
+
+    @ViewBuilder
+    private func filterMenu(title: String, options: [String], current: String, onSelect: @escaping (String) -> Void) -> some View {
+        if options.count > 2 {   // only show sub-menu if there's actually choice (> "All" + 1)
+            Menu(title) {
+                ForEach(options, id: \.self) { opt in
+                    Button {
+                        onSelect(opt)
+                    } label: {
+                        if current == opt {
+                            Label(opt.isEmpty ? "None" : opt, systemImage: "checkmark")
+                        } else {
+                            Text(opt.isEmpty ? "None" : opt)
                         }
                     }
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "arrow.up.arrow.down").font(.system(size: 11, weight: .semibold))
-                        Text(store.sortBy.rawValue).font(Theme.courier(13))
-                    }
-                    .foregroundStyle(Theme.textS)
-                    .padding(.horizontal, 14).padding(.vertical, 7)
-                    .background(Theme.bg2).clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                ForEach(genres, id: \.self) { g in
-                    Button { store.send(.genreSelected(g)) } label: {
-                        Text(g)
-                            .font(Theme.courier(13, store.genre == g ? .semibold : .regular))
-                            .foregroundStyle(store.genre == g ? Color.black : Theme.textS)
-                            .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(store.genre == g ? settings.accentColor : Theme.bg2)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
         }
-        .background(Theme.bg1)
     }
 
-    // MARK: – Grid content
+    @ViewBuilder
+    private func sortSubMenu<C: View>(label: String, @ViewBuilder content: () -> C) -> some View {
+        Menu(label) { content() }
+    }
+
+    @ViewBuilder
+    private func sortItem(_ sort: CollectionFeature.SortBy, _ label: String) -> some View {
+        Button {
+            store.send(.sortSelected(sort))
+        } label: {
+            if store.sortBy == sort {
+                Label(label, systemImage: "checkmark")
+            } else {
+                Text(label)
+            }
+        }
+    }
+
+    // MARK: – Grid
     private var gridContent: some View {
         ScrollView {
             LazyVGrid(columns: cols, spacing: 12) {
@@ -167,21 +283,23 @@ struct CollectionView: View {
                 }
             }
             .padding(12)
+            .padding(.bottom, Theme.tabBarHeight)
         }
         .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
     }
 
-    // MARK: – List content
+    // MARK: – List
     private var listContent: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                ForEach(displayed) { rec in
-                    listRow(rec)
-                }
+                ForEach(displayed) { rec in listRow(rec) }
             }
             .padding(12)
+            .padding(.bottom, Theme.tabBarHeight)
         }
         .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private func listRow(_ rec: Record) -> some View {
@@ -190,7 +308,7 @@ struct CollectionView: View {
                 if settings.showArtwork, let d = rec.coverData, let img = UIImage(data: d) {
                     Image(uiImage: img).resizable().scaledToFill()
                 } else {
-                    ZStack { Theme.bg2; VinylView(color: rec.colorHex) }
+                    ZStack { settings.bg2; VinylView(color: rec.colorHex) }
                 }
             }
             .frame(width: 54, height: 54)
@@ -203,18 +321,13 @@ struct CollectionView: View {
                     .foregroundStyle(Theme.textS).lineLimit(1)
                 HStack(spacing: 4) {
                     if !rec.year.isEmpty {
-                        Text(rec.year).font(Theme.courier(9, .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(Color.black.opacity(0.40))
-                            .clipShape(Capsule())
+                        listBadge(rec.year, Color.black.opacity(0.40))
                     }
                     if !rec.genre.isEmpty {
-                        Text(rec.genre).font(Theme.courier(9, .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(Color(hex: rec.colorHex).opacity(0.90))
-                            .clipShape(Capsule())
+                        listBadge(rec.genre, Color(hex: rec.colorHex).opacity(0.90))
+                    }
+                    if !rec.rpm.isEmpty {
+                        listBadge("\(rec.rpm) RPM", Color(hex: rec.colorHex).opacity(0.65))
                     }
                 }
             }
@@ -225,11 +338,18 @@ struct CollectionView: View {
             .buttonStyle(.plain)
         }
         .padding(12)
-        .background(Theme.bg1)
+        .background(settings.bg1)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .onTapGesture {
             withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) { expandedRecord = rec }
         }
+    }
+
+    private func listBadge(_ text: String, _ bg: Color) -> some View {
+        Text(text).font(Theme.courier(9, .bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 5).padding(.vertical, 2)
+            .background(bg).clipShape(Capsule())
     }
 
     // MARK: – Empty state
@@ -262,7 +382,7 @@ struct CollectionView: View {
         Button(role: .destructive) { ctx.delete(rec) } label: { Label("Delete", systemImage: "trash") }
     }
 
-    // MARK: – Auto-fetch missing prices in background
+    // MARK: – Auto-fetch missing prices
     @MainActor
     private func autofetchPrices() async {
         let missing = records.filter { $0.discogsId != nil && $0.currentValue == nil }
@@ -270,10 +390,8 @@ struct CollectionView: View {
         let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
         for rec in missing {
             guard let did = rec.discogsId else { continue }
-            if let price = await DiscogsClient.liveValue.fetchPrice(did, token) {
-                rec.currentValue = price
-            }
-            try? await Task.sleep(nanoseconds: 400_000_000) // rate-limit
+            if let price = await DiscogsClient.liveValue.fetchPrice(did, token) { rec.currentValue = price }
+            try? await Task.sleep(nanoseconds: 400_000_000)
         }
     }
 
@@ -282,21 +400,21 @@ struct CollectionView: View {
         let title = store.isWishlist ? "My Wishlist" : "My Collection"
         let lines = displayed.map { r in
             var s = "\(r.album) — \(r.artist)"
-            if !r.year.isEmpty { s += " (\(r.year))" }
+            if !r.year.isEmpty  { s += " (\(r.year))" }
             if !r.genre.isEmpty { s += " [\(r.genre)]" }
             return s
         }
-        let text = "🎵 \(title) (\(displayed.count) records)\n\n" + lines.joined(separator: "\n") + "\n\n— shared via VinCo"
+        let text = "🎵 \(title) (\(displayed.count) records)\n\n"
+            + lines.joined(separator: "\n") + "\n\n— shared via VinCo"
         let av = UIActivityViewController(activityItems: [text], applicationActivities: nil)
         if let scene  = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = scene.windows.first,
-           let root   = window.rootViewController {
+           let window = scene.windows.first, let root = window.rootViewController {
             root.present(av, animated: true)
         }
     }
 }
 
-// MARK: – Flip+Zoom Detail Card (shown as overlay in CollectionView)
+// MARK: – Flip+Zoom Detail Card
 struct FlipDetailCard: View {
     let record: Record
     var onEdit:    () -> Void = {}
@@ -322,7 +440,6 @@ struct FlipDetailCard: View {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) { isFlipped.toggle() }
         }
         .onAppear {
-            // Auto-flip to back after a brief zoom pause
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 withAnimation(.spring(response: 0.55, dampingFraction: 0.76)) { isFlipped = true }
             }
@@ -336,7 +453,7 @@ struct FlipDetailCard: View {
                 if settings.showArtwork, let d = record.coverData, let img = UIImage(data: d) {
                     Image(uiImage: img).resizable().scaledToFill()
                 } else {
-                    ZStack { Theme.bg1; VinylView(color: record.colorHex).padding(40) }
+                    ZStack { settings.bg1; VinylView(color: record.colorHex).padding(40) }
                 }
             }
             .aspectRatio(1, contentMode: .fit).frame(maxWidth: .infinity).clipped()
@@ -351,22 +468,19 @@ struct FlipDetailCard: View {
         .overlay(alignment: .topLeading) {
             HStack(spacing: 4) {
                 if !record.year.isEmpty {
-                    Text(record.year).font(Theme.courier(9, .bold)).foregroundStyle(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(Color.black.opacity(0.60)).clipShape(Capsule())
+                    flipBadge(record.year, Color.black.opacity(0.60))
                 }
                 if !record.genre.isEmpty {
-                    Text(record.genre).font(Theme.courier(9, .bold)).foregroundStyle(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(Color(hex: record.colorHex).opacity(0.90)).clipShape(Capsule())
+                    flipBadge(record.genre, Color(hex: record.colorHex).opacity(0.90))
+                }
+                if !record.rpm.isEmpty {
+                    flipBadge("\(record.rpm) RPM", Color(hex: record.colorHex).opacity(0.65))
                 }
             }.padding(10)
         }
         .overlay(alignment: .topTrailing) {
             Button { onDismiss() } label: {
-                Text("✕").font(Theme.courier(13, .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .padding(10)
+                Text("✕").font(Theme.courier(13, .medium)).foregroundStyle(.white.opacity(0.7)).padding(10)
             }.buttonStyle(.plain)
         }
         .aspectRatio(1, contentMode: .fit)
@@ -375,13 +489,10 @@ struct FlipDetailCard: View {
     // Back — full record detail
     private var back: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(record.album).font(Theme.courier(15, .bold))
-                        .foregroundStyle(Theme.textP).lineLimit(1)
-                    Text(record.artist).font(Theme.courier(12))
-                        .foregroundStyle(Theme.textS).lineLimit(1)
+                    Text(record.album).font(Theme.courier(15, .bold)).foregroundStyle(Theme.textP).lineLimit(1)
+                    Text(record.artist).font(Theme.courier(12)).foregroundStyle(Theme.textS).lineLimit(1)
                 }
                 Spacer()
                 Button { onDismiss() } label: {
@@ -392,15 +503,15 @@ struct FlipDetailCard: View {
 
             Rectangle().fill(Theme.divide).frame(height: 1)
 
-            // Info rows
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    if !record.year.isEmpty      { infoRow("YEAR",    record.year)      }
-                    if !record.genre.isEmpty     { infoRow("GENRE",   record.genre)     }
-                    if !record.condition.isEmpty { infoRow("COND.",   record.condition) }
-                    if !record.label.isEmpty     { infoRow("LABEL",   record.label)     }
-                    if !record.format.isEmpty    { infoRow("FORMAT",  record.format)    }
-                    if !record.country.isEmpty   { infoRow("COUNTRY", record.country)   }
+                    if !record.year.isEmpty      { infoRow("YEAR",      record.year)      }
+                    if !record.genre.isEmpty     { infoRow("GENRE",     record.genre)     }
+                    if !record.rpm.isEmpty       { infoRow("RPM",       record.rpm)       }
+                    if !record.condition.isEmpty { infoRow("COND.",     record.condition) }
+                    if !record.label.isEmpty     { infoRow("LABEL",     record.label)     }
+                    if !record.format.isEmpty    { infoRow("FORMAT",    record.format)    }
+                    if !record.country.isEmpty   { infoRow("COUNTRY",   record.country)   }
                     if !record.notes.isEmpty {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("NOTES").font(Theme.courier(9, .semibold)).foregroundStyle(Theme.textT)
@@ -411,15 +522,14 @@ struct FlipDetailCard: View {
                     }
                     if let p = record.paidPrice, let v = record.currentValue {
                         HStack(spacing: 16) {
-                            valItem("PAID",  "\(p)")
-                            valItem("VALUE", "\(v)")
+                            valItem("PAID",  String(format: "%.0f", p))
+                            valItem("VALUE", String(format: "%.0f", v))
                             let gain = ((v-p)/p)*100
                             valItem("GAIN", String(format: "%+.0f%%", gain), gain >= 0 ? .green : .red)
                         }
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         Rectangle().fill(Theme.divide).frame(height: 1)
                     }
-
                     // Tracklist
                     if record.tracks.isEmpty {
                         HStack {
@@ -433,13 +543,9 @@ struct FlipDetailCard: View {
                                 }
                             } label: {
                                 HStack(spacing: 6) {
-                                    if isFetchingTracks {
-                                        ProgressView().tint(settings.accentColor).scaleEffect(0.75)
-                                    } else {
-                                        Image(systemName: "list.bullet").font(.system(size: 12))
-                                    }
-                                    Text(isFetchingTracks ? "Fetching…" : "Get Tracklist")
-                                        .font(Theme.courier(11))
+                                    if isFetchingTracks { ProgressView().tint(settings.accentColor).scaleEffect(0.75) }
+                                    else { Image(systemName: "list.bullet").font(.system(size: 12)) }
+                                    Text(isFetchingTracks ? "Fetching…" : "Get Tracklist").font(Theme.courier(11))
                                 }
                                 .foregroundStyle(settings.accentColor)
                             }
@@ -449,23 +555,17 @@ struct FlipDetailCard: View {
                         }
                         Rectangle().fill(Theme.divide).frame(height: 1)
                     } else {
-                        Text("TRACKLIST")
-                            .font(Theme.courier(9, .semibold))
-                            .foregroundStyle(Theme.textT)
+                        Text("TRACKLIST").font(Theme.courier(9, .semibold)).foregroundStyle(Theme.textT)
                             .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 2)
                         ForEach(record.tracks) { track in
                             VStack(spacing: 0) {
                                 HStack(spacing: 6) {
-                                    Text("\(track.number)")
-                                        .font(Theme.courier(9)).foregroundStyle(Theme.textT)
+                                    Text("\(track.number)").font(Theme.courier(9)).foregroundStyle(Theme.textT)
                                         .frame(width: 18, alignment: .trailing)
-                                    Text(track.name)
-                                        .font(Theme.courier(11)).foregroundStyle(Theme.textS)
-                                        .lineLimit(1)
+                                    Text(track.name).font(Theme.courier(11)).foregroundStyle(Theme.textS).lineLimit(1)
                                     Spacer()
                                     if !track.durationStr.isEmpty {
-                                        Text(track.durationStr)
-                                            .font(Theme.courier(9)).foregroundStyle(Theme.textT)
+                                        Text(track.durationStr).font(Theme.courier(9)).foregroundStyle(Theme.textT)
                                     }
                                 }
                                 .padding(.horizontal, 14).padding(.vertical, 5)
@@ -480,14 +580,19 @@ struct FlipDetailCard: View {
             HStack(spacing: 0) {
                 actionBtn("pencil",  settings.accentColor)  { onEdit()   }
                 Rectangle().fill(Theme.divide).frame(width:1).frame(maxHeight:.infinity)
-                actionBtn(record.isWishlist ? "square.stack.3d.up" : "heart", Theme.textS) { onMove()   }
+                actionBtn(record.isWishlist ? "square.stack.3d.up" : "heart", Theme.textS) { onMove() }
                 Rectangle().fill(Theme.divide).frame(width:1).frame(maxHeight:.infinity)
-                actionBtn("trash",   .red)                  { onDelete() }
+                actionBtn("trash", .red) { onDelete() }
             }
             .frame(height: 50)
         }
-        .background(Theme.bg2)
+        .background(settings.bg2)
         .aspectRatio(1, contentMode: .fit)
+    }
+
+    private func flipBadge(_ text: String, _ bg: Color) -> some View {
+        Text(text).font(Theme.courier(9, .bold)).foregroundStyle(.white)
+            .padding(.horizontal, 6).padding(.vertical, 3).background(bg).clipShape(Capsule())
     }
 
     private func infoRow(_ key: String, _ val: String) -> some View {

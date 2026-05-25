@@ -26,15 +26,14 @@ struct StatsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Refresh progress banner
                     if let msg = store.refreshMsg {
                         HStack(spacing: 8) {
                             if store.isRefreshing { ProgressView().tint(settings.accentColor).scaleEffect(0.8) }
-                            Text(msg).font(.system(size: 12)).foregroundStyle(settings.accentColor)
+                            Text(msg).font(Theme.courier(12)).foregroundStyle(settings.accentColor)
                             Spacer()
                         }
                         .padding(.horizontal, 14).padding(.vertical, 8)
-                        .background(Theme.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+                        .background(settings.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
                     }
                     summaryGrid
                     if paid > 0 || value > 0 { valuationCard }
@@ -44,10 +43,11 @@ struct StatsView: View {
                 }
                 .padding(16).padding(.bottom, 32)
             }
-            .background(Theme.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .background(settings.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Stats")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.bg1, for: .navigationBar)
+            .toolbarBackground(settings.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -83,40 +83,36 @@ struct StatsView: View {
                 if let price = await DiscogsClient.liveValue.fetchPrice(did, token) {
                     await MainActor.run { rec.currentValue = price; updated += 1 }
                 }
-                await MainActor.run {
-                    store.send(.refreshProgress("Fetching… \(i+1)/\(eligible.count)"))
-                }
+                await MainActor.run { store.send(.refreshProgress("Fetching… \(i+1)/\(eligible.count)")) }
                 try? await Task.sleep(nanoseconds: 350_000_000)
             }
-            await MainActor.run {
-                store.send(.refreshDone("Updated \(updated)/\(eligible.count) records ✓"))
-            }
+            await MainActor.run { store.send(.refreshDone("Updated \(updated)/\(eligible.count) records ✓")) }
         }
     }
 
     // MARK: – Summary grid
     private var summaryGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            statCard("\(col.count)", "Records",   "square.stack.3d.up.fill", settings.accentColor)
-            statCard("\(wl.count)",  "Wishlist",  "heart.fill",              .pink)
-            statCard("\(genres.count)","Genres",  "music.note",              .purple)
-            statCard(artists.first?.0 ?? "—", "Top Artist", "star.fill",    .orange)
+            statCard("\(col.count)", "Records",      "square.stack.3d.up.fill", settings.accentColor)
+            statCard("\(wl.count)",  "Wishlist",     "heart.fill",              .pink)
+            statCard("\(genres.count)", "Genres",    "music.note",              .purple)
+            statCard(artists.first?.0 ?? "—", "Top Artist", "star.fill",       .orange)
         }
     }
 
     private func statCard(_ v: String, _ l: String, _ icon: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: icon).font(.title3).foregroundStyle(color)
-            Text(v).font(.system(size: 22, weight: .bold)).foregroundStyle(Theme.textP).lineLimit(1).minimumScaleFactor(0.5)
-            Text(l).font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.textS)
+            Text(v).font(Theme.courier(22, .bold)).foregroundStyle(Theme.textP).lineLimit(1).minimumScaleFactor(0.5)
+            Text(l).font(Theme.courier(11, .medium)).foregroundStyle(Theme.textS)
         }
         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+        .background(settings.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
     }
 
     private var valuationCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("COLLECTION VALUE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.textT)
+            Text("COLLECTION VALUE").font(Theme.courier(11, .semibold)).foregroundStyle(Theme.textT)
             HStack(spacing: 28) {
                 valItem("PAID",  "\(settings.currency) \(Int(paid))",  .white)
                 Rectangle().fill(Theme.divide).frame(width:1,height:40)
@@ -128,19 +124,19 @@ struct StatsView: View {
                 }
             }
         }
-        .padding(16).background(Theme.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+        .padding(16).background(settings.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
     }
 
     private func valItem(_ l: String, _ v: String, _ c: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(l).font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.textT)
-            Text(v).font(.system(size: 20, weight: .bold)).foregroundStyle(c)
+            Text(l).font(Theme.courier(10, .semibold)).foregroundStyle(Theme.textT)
+            Text(v).font(Theme.courier(20, .bold)).foregroundStyle(c)
         }
     }
 
     private func barChart(_ title: String, data: [(String,Int)], horizontal: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.textT)
+            Text(title).font(Theme.courier(11, .semibold)).foregroundStyle(Theme.textT)
             Chart(data, id: \.0) { item in
                 if horizontal {
                     BarMark(x: .value("n", item.1), y: .value("l", item.0))
@@ -154,23 +150,23 @@ struct StatsView: View {
             .chartYAxis { AxisMarks { AxisValueLabel().foregroundStyle(Theme.textS) } }
             .frame(height: horizontal ? CGFloat(data.count)*36 : 180)
         }
-        .padding(16).background(Theme.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+        .padding(16).background(settings.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
     }
 
     private var topArtistsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("TOP ARTISTS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.textT)
+            Text("TOP ARTISTS").font(Theme.courier(11, .semibold)).foregroundStyle(Theme.textT)
             ForEach(Array(artists.enumerated()), id: \.element.0) { i, item in
                 HStack {
-                    Text("\(i+1)").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.textT).frame(width: 20)
-                    Text(item.0).font(.system(size: 14)).foregroundStyle(Theme.textP)
+                    Text("\(i+1)").font(Theme.courier(12, .medium)).foregroundStyle(Theme.textT).frame(width: 20)
+                    Text(item.0).font(Theme.courier(14)).foregroundStyle(Theme.textP)
                     Spacer()
-                    Text("\(item.1)").font(.system(size: 13, weight: .medium)).foregroundStyle(settings.accentColor)
+                    Text("\(item.1)").font(Theme.courier(13, .medium)).foregroundStyle(settings.accentColor)
                 }
                 if i < artists.count-1 { Rectangle().fill(Theme.divide).frame(height:1) }
             }
         }
-        .padding(16).background(Theme.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+        .padding(16).background(settings.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
     }
 
     private func grouped(_ records: [Record], by key: (Record)->String) -> [(String,Int)] {
