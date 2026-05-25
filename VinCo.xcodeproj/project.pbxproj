@@ -51,6 +51,36 @@
 		EFF0745D2FC329A8001D748E /* VinCo-Icon-Turquoise.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0745C2FC329A8001D748E /* VinCo-Icon-Turquoise.png */; };
 		EFF0745F2FC329A8001D748E /* VinCo-Icon-Gold.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0745E2FC329A8001D748E /* VinCo-Icon-Gold.png */; };
 		EFF074612FC329A8001D748E /* VinCo-Icon-Silver.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074602FC329A8001D748E /* VinCo-Icon-Silver.png */; };
+		EFF074632FC329A8001D748E /* VinCo-Icon-Sky@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074622FC329A8001D748E /* VinCo-Icon-Sky@2x.png */; };
+		EFF074652FC329A8001D748E /* VinCo-Icon-Sky@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074642FC329A8001D748E /* VinCo-Icon-Sky@3x.png */; };
+		EFF074672FC329A8001D748E /* VinCo-Icon-Violet@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074662FC329A8001D748E /* VinCo-Icon-Violet@2x.png */; };
+		EFF074692FC329A8001D748E /* VinCo-Icon-Violet@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074682FC329A8001D748E /* VinCo-Icon-Violet@3x.png */; };
+		EFF0746B2FC329A8001D748E /* VinCo-Icon-Mint@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0746A2FC329A8001D748E /* VinCo-Icon-Mint@2x.png */; };
+		EFF0746D2FC329A8001D748E /* VinCo-Icon-Mint@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0746C2FC329A8001D748E /* VinCo-Icon-Mint@3x.png */; };
+		EFF0746F2FC329A8001D748E /* VinCo-Icon-Rose@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0746E2FC329A8001D748E /* VinCo-Icon-Rose@2x.png */; };
+		EFF074712FC329A8001D748E /* VinCo-Icon-Rose@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074702FC329A8001D748E /* VinCo-Icon-Rose@3x.png */; };
+		EFF074732FC329A8001D748E /* VinCo-Icon-Lemon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074722FC329A8001D748E /* VinCo-Icon-Lemon@2x.png */; };
+		EFF074752FC329A8001D748E /* VinCo-Icon-Lemon@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074742FC329A8001D748E /* VinCo-Icon-Lemon@3x.png */; };
+		EFF074772FC329A8001D748E /* VinCo-Icon-Coral@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074762FC329A8001D748E /* VinCo-Icon-Coral@2x.png */; };
+		EFF074792FC329A8001D748E /* VinCo-Icon-Coral@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074782FC329A8001D748E /* VinCo-Icon-Coral@3x.png */; };
+		EFF0747B2FC329A8001D748E /* VinCo-Icon-Teal@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0747A2FC329A8001D748E /* VinCo-Icon-Teal@2x.png */; };
+		EFF0747D2FC329A8001D748E /* VinCo-Icon-Teal@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0747C2FC329A8001D748E /* VinCo-Icon-Teal@3x.png */; };
+		EFF0747F2FC329A8001D748E /* VinCo-Icon-Indigo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0747E2FC329A8001D748E /* VinCo-Icon-Indigo@2x.png */; };
+		EFF074812FC329A8001D748E /* VinCo-Icon-Indigo@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074802FC329A8001D748E /* VinCo-Icon-Indigo@3x.png */; };
+		EFF074832FC329A8001D748E /* VinCo-Icon-Peach@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074822FC329A8001D748E /* VinCo-Icon-Peach@2x.png */; };
+		EFF074852FC329A8001D748E /* VinCo-Icon-Peach@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074842FC329A8001D748E /* VinCo-Icon-Peach@3x.png */; };
+		EFF074872FC329A8001D748E /* VinCo-Icon-Lime@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074862FC329A8001D748E /* VinCo-Icon-Lime@2x.png */; };
+		EFF074892FC329A8001D748E /* VinCo-Icon-Lime@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074882FC329A8001D748E /* VinCo-Icon-Lime@3x.png */; };
+		EFF0748B2FC329A8001D748E /* VinCo-Icon-Lavender@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0748A2FC329A8001D748E /* VinCo-Icon-Lavender@2x.png */; };
+		EFF0748D2FC329A8001D748E /* VinCo-Icon-Lavender@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0748C2FC329A8001D748E /* VinCo-Icon-Lavender@3x.png */; };
+		EFF0748F2FC329A8001D748E /* VinCo-Icon-Crimson@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0748E2FC329A8001D748E /* VinCo-Icon-Crimson@2x.png */; };
+		EFF074912FC329A8001D748E /* VinCo-Icon-Crimson@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074902FC329A8001D748E /* VinCo-Icon-Crimson@3x.png */; };
+		EFF074932FC329A8001D748E /* VinCo-Icon-Turquoise@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074922FC329A8001D748E /* VinCo-Icon-Turquoise@2x.png */; };
+		EFF074952FC329A8001D748E /* VinCo-Icon-Turquoise@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074942FC329A8001D748E /* VinCo-Icon-Turquoise@3x.png */; };
+		EFF074972FC329A8001D748E /* VinCo-Icon-Gold@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074962FC329A8001D748E /* VinCo-Icon-Gold@2x.png */; };
+		EFF074992FC329A8001D748E /* VinCo-Icon-Gold@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF074982FC329A8001D748E /* VinCo-Icon-Gold@3x.png */; };
+		EFF0749B2FC329A8001D748E /* VinCo-Icon-Silver@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0749A2FC329A8001D748E /* VinCo-Icon-Silver@2x.png */; };
+		EFF0749D2FC329A8001D748E /* VinCo-Icon-Silver@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = EFF0749C2FC329A8001D748E /* VinCo-Icon-Silver@3x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +129,36 @@
 		EFF0745C2FC329A8001D748E /* VinCo-Icon-Turquoise.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Turquoise.png"; sourceTree = "<group>"; };
 		EFF0745E2FC329A8001D748E /* VinCo-Icon-Gold.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Gold.png"; sourceTree = "<group>"; };
 		EFF074602FC329A8001D748E /* VinCo-Icon-Silver.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Silver.png"; sourceTree = "<group>"; };
+		EFF074622FC329A8001D748E /* VinCo-Icon-Sky@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Sky@2x.png"; sourceTree = "<group>"; };
+		EFF074642FC329A8001D748E /* VinCo-Icon-Sky@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Sky@3x.png"; sourceTree = "<group>"; };
+		EFF074662FC329A8001D748E /* VinCo-Icon-Violet@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Violet@2x.png"; sourceTree = "<group>"; };
+		EFF074682FC329A8001D748E /* VinCo-Icon-Violet@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Violet@3x.png"; sourceTree = "<group>"; };
+		EFF0746A2FC329A8001D748E /* VinCo-Icon-Mint@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Mint@2x.png"; sourceTree = "<group>"; };
+		EFF0746C2FC329A8001D748E /* VinCo-Icon-Mint@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Mint@3x.png"; sourceTree = "<group>"; };
+		EFF0746E2FC329A8001D748E /* VinCo-Icon-Rose@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Rose@2x.png"; sourceTree = "<group>"; };
+		EFF074702FC329A8001D748E /* VinCo-Icon-Rose@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Rose@3x.png"; sourceTree = "<group>"; };
+		EFF074722FC329A8001D748E /* VinCo-Icon-Lemon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Lemon@2x.png"; sourceTree = "<group>"; };
+		EFF074742FC329A8001D748E /* VinCo-Icon-Lemon@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Lemon@3x.png"; sourceTree = "<group>"; };
+		EFF074762FC329A8001D748E /* VinCo-Icon-Coral@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Coral@2x.png"; sourceTree = "<group>"; };
+		EFF074782FC329A8001D748E /* VinCo-Icon-Coral@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Coral@3x.png"; sourceTree = "<group>"; };
+		EFF0747A2FC329A8001D748E /* VinCo-Icon-Teal@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Teal@2x.png"; sourceTree = "<group>"; };
+		EFF0747C2FC329A8001D748E /* VinCo-Icon-Teal@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Teal@3x.png"; sourceTree = "<group>"; };
+		EFF0747E2FC329A8001D748E /* VinCo-Icon-Indigo@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Indigo@2x.png"; sourceTree = "<group>"; };
+		EFF074802FC329A8001D748E /* VinCo-Icon-Indigo@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Indigo@3x.png"; sourceTree = "<group>"; };
+		EFF074822FC329A8001D748E /* VinCo-Icon-Peach@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Peach@2x.png"; sourceTree = "<group>"; };
+		EFF074842FC329A8001D748E /* VinCo-Icon-Peach@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Peach@3x.png"; sourceTree = "<group>"; };
+		EFF074862FC329A8001D748E /* VinCo-Icon-Lime@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Lime@2x.png"; sourceTree = "<group>"; };
+		EFF074882FC329A8001D748E /* VinCo-Icon-Lime@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Lime@3x.png"; sourceTree = "<group>"; };
+		EFF0748A2FC329A8001D748E /* VinCo-Icon-Lavender@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Lavender@2x.png"; sourceTree = "<group>"; };
+		EFF0748C2FC329A8001D748E /* VinCo-Icon-Lavender@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Lavender@3x.png"; sourceTree = "<group>"; };
+		EFF0748E2FC329A8001D748E /* VinCo-Icon-Crimson@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Crimson@2x.png"; sourceTree = "<group>"; };
+		EFF074902FC329A8001D748E /* VinCo-Icon-Crimson@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Crimson@3x.png"; sourceTree = "<group>"; };
+		EFF074922FC329A8001D748E /* VinCo-Icon-Turquoise@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Turquoise@2x.png"; sourceTree = "<group>"; };
+		EFF074942FC329A8001D748E /* VinCo-Icon-Turquoise@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Turquoise@3x.png"; sourceTree = "<group>"; };
+		EFF074962FC329A8001D748E /* VinCo-Icon-Gold@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Gold@2x.png"; sourceTree = "<group>"; };
+		EFF074982FC329A8001D748E /* VinCo-Icon-Gold@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Gold@3x.png"; sourceTree = "<group>"; };
+		EFF0749A2FC329A8001D748E /* VinCo-Icon-Silver@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Silver@2x.png"; sourceTree = "<group>"; };
+		EFF0749C2FC329A8001D748E /* VinCo-Icon-Silver@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "VinCo-Icon-Silver@3x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +223,36 @@
 				EFF0745C2FC329A8001D748E /* VinCo-Icon-Turquoise.png */,
 				EFF0745E2FC329A8001D748E /* VinCo-Icon-Gold.png */,
 				EFF074602FC329A8001D748E /* VinCo-Icon-Silver.png */,
+				EFF074622FC329A8001D748E /* VinCo-Icon-Sky@2x.png */,
+				EFF074642FC329A8001D748E /* VinCo-Icon-Sky@3x.png */,
+				EFF074662FC329A8001D748E /* VinCo-Icon-Violet@2x.png */,
+				EFF074682FC329A8001D748E /* VinCo-Icon-Violet@3x.png */,
+				EFF0746A2FC329A8001D748E /* VinCo-Icon-Mint@2x.png */,
+				EFF0746C2FC329A8001D748E /* VinCo-Icon-Mint@3x.png */,
+				EFF0746E2FC329A8001D748E /* VinCo-Icon-Rose@2x.png */,
+				EFF074702FC329A8001D748E /* VinCo-Icon-Rose@3x.png */,
+				EFF074722FC329A8001D748E /* VinCo-Icon-Lemon@2x.png */,
+				EFF074742FC329A8001D748E /* VinCo-Icon-Lemon@3x.png */,
+				EFF074762FC329A8001D748E /* VinCo-Icon-Coral@2x.png */,
+				EFF074782FC329A8001D748E /* VinCo-Icon-Coral@3x.png */,
+				EFF0747A2FC329A8001D748E /* VinCo-Icon-Teal@2x.png */,
+				EFF0747C2FC329A8001D748E /* VinCo-Icon-Teal@3x.png */,
+				EFF0747E2FC329A8001D748E /* VinCo-Icon-Indigo@2x.png */,
+				EFF074802FC329A8001D748E /* VinCo-Icon-Indigo@3x.png */,
+				EFF074822FC329A8001D748E /* VinCo-Icon-Peach@2x.png */,
+				EFF074842FC329A8001D748E /* VinCo-Icon-Peach@3x.png */,
+				EFF074862FC329A8001D748E /* VinCo-Icon-Lime@2x.png */,
+				EFF074882FC329A8001D748E /* VinCo-Icon-Lime@3x.png */,
+				EFF0748A2FC329A8001D748E /* VinCo-Icon-Lavender@2x.png */,
+				EFF0748C2FC329A8001D748E /* VinCo-Icon-Lavender@3x.png */,
+				EFF0748E2FC329A8001D748E /* VinCo-Icon-Crimson@2x.png */,
+				EFF074902FC329A8001D748E /* VinCo-Icon-Crimson@3x.png */,
+				EFF074922FC329A8001D748E /* VinCo-Icon-Turquoise@2x.png */,
+				EFF074942FC329A8001D748E /* VinCo-Icon-Turquoise@3x.png */,
+				EFF074962FC329A8001D748E /* VinCo-Icon-Gold@2x.png */,
+				EFF074982FC329A8001D748E /* VinCo-Icon-Gold@3x.png */,
+				EFF0749A2FC329A8001D748E /* VinCo-Icon-Silver@2x.png */,
+				EFF0749C2FC329A8001D748E /* VinCo-Icon-Silver@3x.png */,
 			);
 			path = Icons;
 			sourceTree = "<group>";
@@ -365,6 +455,36 @@
 				EFF0745D2FC329A8001D748E /* VinCo-Icon-Turquoise.png in Resources */,
 				EFF0745F2FC329A8001D748E /* VinCo-Icon-Gold.png in Resources */,
 				EFF074612FC329A8001D748E /* VinCo-Icon-Silver.png in Resources */,
+				EFF074632FC329A8001D748E /* VinCo-Icon-Sky@2x.png in Resources */,
+				EFF074652FC329A8001D748E /* VinCo-Icon-Sky@3x.png in Resources */,
+				EFF074672FC329A8001D748E /* VinCo-Icon-Violet@2x.png in Resources */,
+				EFF074692FC329A8001D748E /* VinCo-Icon-Violet@3x.png in Resources */,
+				EFF0746B2FC329A8001D748E /* VinCo-Icon-Mint@2x.png in Resources */,
+				EFF0746D2FC329A8001D748E /* VinCo-Icon-Mint@3x.png in Resources */,
+				EFF0746F2FC329A8001D748E /* VinCo-Icon-Rose@2x.png in Resources */,
+				EFF074712FC329A8001D748E /* VinCo-Icon-Rose@3x.png in Resources */,
+				EFF074732FC329A8001D748E /* VinCo-Icon-Lemon@2x.png in Resources */,
+				EFF074752FC329A8001D748E /* VinCo-Icon-Lemon@3x.png in Resources */,
+				EFF074772FC329A8001D748E /* VinCo-Icon-Coral@2x.png in Resources */,
+				EFF074792FC329A8001D748E /* VinCo-Icon-Coral@3x.png in Resources */,
+				EFF0747B2FC329A8001D748E /* VinCo-Icon-Teal@2x.png in Resources */,
+				EFF0747D2FC329A8001D748E /* VinCo-Icon-Teal@3x.png in Resources */,
+				EFF0747F2FC329A8001D748E /* VinCo-Icon-Indigo@2x.png in Resources */,
+				EFF074812FC329A8001D748E /* VinCo-Icon-Indigo@3x.png in Resources */,
+				EFF074832FC329A8001D748E /* VinCo-Icon-Peach@2x.png in Resources */,
+				EFF074852FC329A8001D748E /* VinCo-Icon-Peach@3x.png in Resources */,
+				EFF074872FC329A8001D748E /* VinCo-Icon-Lime@2x.png in Resources */,
+				EFF074892FC329A8001D748E /* VinCo-Icon-Lime@3x.png in Resources */,
+				EFF0748B2FC329A8001D748E /* VinCo-Icon-Lavender@2x.png in Resources */,
+				EFF0748D2FC329A8001D748E /* VinCo-Icon-Lavender@3x.png in Resources */,
+				EFF0748F2FC329A8001D748E /* VinCo-Icon-Crimson@2x.png in Resources */,
+				EFF074912FC329A8001D748E /* VinCo-Icon-Crimson@3x.png in Resources */,
+				EFF074932FC329A8001D748E /* VinCo-Icon-Turquoise@2x.png in Resources */,
+				EFF074952FC329A8001D748E /* VinCo-Icon-Turquoise@3x.png in Resources */,
+				EFF074972FC329A8001D748E /* VinCo-Icon-Gold@2x.png in Resources */,
+				EFF074992FC329A8001D748E /* VinCo-Icon-Gold@3x.png in Resources */,
+				EFF0749B2FC329A8001D748E /* VinCo-Icon-Silver@2x.png in Resources */,
+				EFF0749D2FC329A8001D748E /* VinCo-Icon-Silver@3x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

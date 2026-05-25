@@ -213,7 +213,7 @@ struct CollectionView: View {
                         Text(rec.genre).font(Theme.courier(9, .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(settings.accentColor.opacity(0.80))
+                            .background(Color(hex: rec.colorHex).opacity(0.90))
                             .clipShape(Capsule())
                     }
                 }
@@ -358,7 +358,7 @@ struct FlipDetailCard: View {
                 if !record.genre.isEmpty {
                     Text(record.genre).font(Theme.courier(9, .bold)).foregroundStyle(.white)
                         .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(settings.accentColor.opacity(0.85)).clipShape(Capsule())
+                        .background(Color(hex: record.colorHex).opacity(0.90)).clipShape(Capsule())
                 }
             }.padding(10)
         }

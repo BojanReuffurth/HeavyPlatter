@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import Charts
 import ComposableArchitecture
+import Foundation
 
 struct StatsView: View {
     let store: StoreOf<StatsFeature>
@@ -25,6 +26,16 @@ struct StatsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    // Refresh progress banner
+                    if let msg = store.refreshMsg {
+                        HStack(spacing: 8) {
+                            if store.isRefreshing { ProgressView().tint(settings.accentColor).scaleEffect(0.8) }
+                            Text(msg).font(.system(size: 12)).foregroundStyle(settings.accentColor)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .background(Theme.bg1).clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+                    }
                     summaryGrid
                     if paid > 0 || value > 0 { valuationCard }
                     if !genres.isEmpty  { barChart("GENRES",    data: genres,  horizontal: true) }
@@ -39,9 +50,46 @@ struct StatsView: View {
             .toolbarBackground(Theme.bg1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        guard !store.isRefreshing else { return }
+                        refreshAllPrices()
+                    } label: {
+                        Image(systemName: "arrow.clockwise.circle")
+                            .font(.system(size: 18))
+                            .foregroundStyle(store.isRefreshing ? Theme.textT : settings.accentColor)
+                    }
+                    .disabled(store.isRefreshing)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     CloseButton()
                 }
+            }
+        }
+    }
+
+    private func refreshAllPrices() {
+        let eligible = col.filter { $0.discogsId != nil }
+        guard !eligible.isEmpty else {
+            store.send(.refreshDone("No Discogs IDs found — search and pick results to link records."))
+            return
+        }
+        store.send(.refreshStarted)
+        Task {
+            let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
+            var updated = 0
+            for (i, rec) in eligible.enumerated() {
+                guard let did = rec.discogsId else { continue }
+                if let price = await DiscogsClient.liveValue.fetchPrice(did, token) {
+                    await MainActor.run { rec.currentValue = price; updated += 1 }
+                }
+                await MainActor.run {
+                    store.send(.refreshProgress("Fetching… \(i+1)/\(eligible.count)"))
+                }
+                try? await Task.sleep(nanoseconds: 350_000_000)
+            }
+            await MainActor.run {
+                store.send(.refreshDone("Updated \(updated)/\(eligible.count) records ✓"))
             }
         }
     }

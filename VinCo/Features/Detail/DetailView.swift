@@ -121,6 +121,12 @@ struct DetailView: View {
 
     @ViewBuilder
     private var trackBody: some View {
+        if let err = audio.errorMsg {
+            Text(err)
+                .font(.system(size: 12)).foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16).padding(.vertical, 6)
+        }
         if rec.tracks.isEmpty && !store.isFetching {
             Text("No tracklist — tap ↓ to load.")
                 .font(.system(size: 13)).foregroundStyle(Theme.textT)

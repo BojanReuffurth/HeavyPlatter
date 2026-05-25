@@ -50,7 +50,7 @@ struct AppView: View {
             // Vinyl icon only (no text)
             ZStack {
                 Circle().fill(settings.accentColor.opacity(0.15)).frame(width: 32, height: 32)
-                MiniVinylIcon(color: Color(hex: settings.iconAccentHex), size: 20)
+                MiniVinylIcon(color: settings.accentColor, size: 20)
             }
 
             Spacer()

@@ -64,6 +64,8 @@ struct SettingsView: View {
         .frame(height: 46).background(Theme.bg1)
     }
 
+    @State private var iconFeedback: String? = nil
+
     // MARK: – LOOK
     private var lookTab: some View {
         @Bindable var settings = settings
@@ -114,6 +116,13 @@ struct SettingsView: View {
                                 Text("Changes the label colour on your home screen icon")
                                     .font(.system(size: 12)).foregroundStyle(Theme.textT)
                             }
+                        }
+                        if let msg = iconFeedback {
+                            Text(msg)
+                                .font(.system(size: 11)).foregroundStyle(
+                                    msg.contains("✓") ? .green : Theme.textT
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
@@ -394,9 +403,20 @@ struct SettingsView: View {
     // MARK: – Helpers
     private func applyAppIcon(name: String, hex: String) {
         settings.iconAccentHex = hex
+        guard UIApplication.shared.supportsAlternateIcons else {
+            iconFeedback = "Icon switching requires a real device (not Simulator)."
+            return
+        }
         let iconName: String? = (name == "Amber") ? nil : "VinCo-Icon-\(name)"
         Task {
-            try? await UIApplication.shared.setAlternateIconName(iconName)
+            do {
+                try await UIApplication.shared.setAlternateIconName(iconName)
+                await MainActor.run { iconFeedback = "Icon changed to \(name) ✓" }
+            } catch {
+                await MainActor.run {
+                    iconFeedback = "Change failed: \(error.localizedDescription)"
+                }
+            }
         }
     }
 

@@ -35,7 +35,7 @@ struct CardView: View {
                     badge(record.year, Color.black.opacity(0.60))
                 }
                 if !record.genre.isEmpty {
-                    badge(record.genre, settings.accentColor.opacity(0.85))
+                    badge(record.genre, Color(hex: record.colorHex).opacity(0.90))
                 }
             }
             .padding(8)

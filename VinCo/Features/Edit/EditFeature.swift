@@ -47,6 +47,8 @@ struct EditFeature {
         case priceReceived(Double)
         case fetchTracksTapped
         case tracksReceived([Track])
+        case addEmptyTrack
+        case deleteTrack(IndexSet)
         case saveTapped
         case cancelTapped
     }
@@ -154,6 +156,17 @@ struct EditFeature {
 
             case .tracksReceived(let tracks):
                 state.tracks = tracks; state.fetchingTracks = false; return .none
+
+            case .addEmptyTrack:
+                let next = (state.tracks.map(\.number).max() ?? 0) + 1
+                state.tracks.append(Track(name: "", number: next, duration: 0, preview: ""))
+                return .none
+
+            case .deleteTrack(let offsets):
+                state.tracks.remove(atOffsets: offsets)
+                // Re-number
+                for i in state.tracks.indices { state.tracks[i].number = i + 1 }
+                return .none
 
             case .saveTapped, .cancelTapped: return .none
             case .binding: return .none

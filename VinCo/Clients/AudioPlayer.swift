@@ -7,35 +7,43 @@ final class AudioPlayer: ObservableObject {
     @Published var isPlaying  = false
     @Published var progress   = 0.0
     @Published var currentURL = ""
+    @Published var errorMsg:  String? = nil
 
     private var player:     AVPlayer?
     private var observer:   Any?
     private var statusObs:  NSKeyValueObservation?
 
     func play(url: String) {
-        guard let u = URL(string: url) else { return }
+        guard let u = URL(string: url), !url.isEmpty else { return }
         stop()
+        errorMsg = nil
 
-        // Activate audio session (needed on device; no-op on simulator)
+        // Activate audio session
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default,
+                                                            options: [.defaultToSpeaker])
             try AVAudioSession.sharedInstance().setActive(true)
-        } catch {}
+        } catch {
+            // Non-fatal on Simulator; continue anyway
+        }
 
-        let asset = AVURLAsset(url: u, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
-        let item  = AVPlayerItem(asset: asset)
+        let item  = AVPlayerItem(url: u)
         player    = AVPlayer(playerItem: item)
         currentURL = url
 
-        // Wait for player item to be ready before marking isPlaying
-        statusObs = item.observe(\.status, options: [.new]) { [weak self] item, _ in
+        // Wait for player item to be ready before playback
+        statusObs = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             guard let self else { return }
             DispatchQueue.main.async {
-                if item.status == .readyToPlay {
+                switch item.status {
+                case .readyToPlay:
                     self.isPlaying = true
                     self.player?.play()
-                } else if item.status == .failed {
+                case .failed:
+                    let desc = item.error?.localizedDescription ?? "Unknown error"
+                    self.errorMsg = "Preview failed: \(desc)"
                     self.stop()
+                default: break
                 }
             }
         }
@@ -67,6 +75,7 @@ final class AudioPlayer: ObservableObject {
         )
         player?.pause(); player = nil
         isPlaying = false; progress = 0; currentURL = ""
+        // Keep errorMsg so the UI can show it; caller clears on next play()
     }
 
     @objc private func didFinish() {

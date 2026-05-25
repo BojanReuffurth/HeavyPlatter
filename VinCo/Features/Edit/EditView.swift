@@ -179,39 +179,73 @@ struct EditView: View {
                             .font(.system(size: 13)).foregroundStyle(Theme.textS)
                     }
                 }
-            } else if store.tracks.isEmpty {
-                RBRow(divider: false) {
-                    Button { store.send(.fetchTracksTapped) } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "list.bullet")
-                                .font(.system(size: 13))
-                            Text("Fetch Tracklist")
-                                .font(.system(size: 13))
-                        }
-                        .foregroundStyle(
-                            (store.artist.isEmpty && store.album.isEmpty)
-                                ? Theme.textT : settings.accentColor
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(store.artist.isEmpty && store.album.isEmpty)
-                }
             } else {
-                ForEach(Array(store.tracks.enumerated()), id: \.element.id) { idx, track in
-                    RBRow(divider: idx < store.tracks.count - 1) {
-                        HStack(spacing: 8) {
-                            Text("\(track.number)")
-                                .font(.system(size: 11)).foregroundStyle(Theme.textT)
-                                .frame(width: 22, alignment: .trailing)
-                            Text(track.name)
-                                .font(.system(size: 13)).foregroundStyle(Theme.textP)
-                                .lineLimit(1)
-                            Spacer()
-                            if !track.durationStr.isEmpty {
-                                Text(track.durationStr)
+                // Fetch button (always shown when no tracks yet)
+                if store.tracks.isEmpty {
+                    RBRow(divider: false) {
+                        Button { store.send(.fetchTracksTapped) } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "list.bullet").font(.system(size: 13))
+                                Text("Fetch Tracklist").font(.system(size: 13))
+                            }
+                            .foregroundStyle(
+                                (store.artist.isEmpty && store.album.isEmpty)
+                                    ? Theme.textT : settings.accentColor
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(store.artist.isEmpty && store.album.isEmpty)
+                    }
+                } else {
+                    // Editable track rows
+                    ForEach($store.tracks, id: \.id) { $track in
+                        RBRow(divider: true) {
+                            HStack(spacing: 8) {
+                                Text("\(track.number)")
                                     .font(.system(size: 11)).foregroundStyle(Theme.textT)
+                                    .frame(width: 22, alignment: .trailing)
+                                TextField("Track name", text: $track.name)
+                                    .font(.system(size: 13)).foregroundStyle(Theme.textP)
+                                    .tint(settings.accentColor)
+                                Spacer()
+                                // Duration field (mm:ss format)
+                                TextField("0:00", text: Binding(
+                                    get: { track.duration > 0 ? track.durationStr : "" },
+                                    set: { s in
+                                        var updated = track
+                                        let parts = s.split(separator: ":").compactMap { Int($0) }
+                                        if parts.count == 2 { updated.duration = parts[0]*60 + parts[1] }
+                                        else if let sec = Int(s) { updated.duration = sec }
+                                        $track.wrappedValue = updated
+                                    }
+                                ))
+                                .font(.system(size: 11)).foregroundStyle(Theme.textT)
+                                .keyboardType(.numbersAndPunctuation)
+                                .frame(width: 44).multilineTextAlignment(.trailing)
+                                .tint(settings.accentColor)
+                                Button {
+                                    if let idx = store.tracks.firstIndex(where: { $0.id == track.id }) {
+                                        store.send(.deleteTrack(IndexSet([idx])))
+                                    }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.system(size: 18)).foregroundStyle(.red.opacity(0.7))
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
+                    }
+                    // Add track row
+                    RBRow(divider: false) {
+                        Button { store.send(.addEmptyTrack) } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 16)).foregroundStyle(settings.accentColor)
+                                Text("Add Track")
+                                    .font(.system(size: 13)).foregroundStyle(settings.accentColor)
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
