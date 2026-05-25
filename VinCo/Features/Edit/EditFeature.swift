@@ -1,6 +1,7 @@
 import Foundation
 import ComposableArchitecture
 import SwiftData
+import SwiftUI
 
 @Reducer
 struct EditFeature {
