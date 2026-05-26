@@ -20,17 +20,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Custom header — close left, title, no chrome
-            HStack(spacing: 12) {
-                Button { dismiss() } label: {
-                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                }.buttonStyle(.plain)
-                Text("Settings")
-                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
-                Spacer()
-            }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(settings.bg1)
+            ModalNavBar("Settings", onClose: { dismiss() })
             Rectangle().fill(Theme.divide).frame(height: 1)
             tabBar
             Rectangle().fill(Theme.divide).frame(height: 1)

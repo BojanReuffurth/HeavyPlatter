@@ -15,12 +15,7 @@ struct DetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Custom header — no iOS 26 toolbar glass treatment
-            HStack(spacing: 12) {
-                Button { dismiss() } label: {
-                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                }.buttonStyle(.plain)
-                Spacer()
+            ModalNavBar("", onClose: { dismiss() }) {
                 Menu {
                     Button { store.send(.editTapped)  } label: { Label("Edit", systemImage: "pencil") }
                     if rec.isWishlist {
@@ -37,11 +32,12 @@ struct DetailView: View {
                         Label("Delete", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "ellipsis").foregroundStyle(settings.accentColor)
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(settings.accentColor)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(settings.bg1)
             Rectangle().fill(Theme.divide).frame(height: 1)
 
             ScrollView {

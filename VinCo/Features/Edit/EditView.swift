@@ -19,22 +19,15 @@ struct EditView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Custom header — plain buttons, Courier New title, no iOS 26 glass
-            HStack(spacing: 12) {
-                Button { dismiss() } label: {
-                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                }.buttonStyle(.plain)
-                Text(store.isEditing ? "Edit Record" : "Add Record")
-                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
-                Spacer()
+            ModalNavBar(store.isEditing ? "Edit Record" : "Add Record",
+                        onClose: { dismiss() }) {
                 Button(store.isEditing ? "Save" : "Add") { save() }
                     .font(Theme.courier(14, .semibold))
                     .foregroundStyle(store.canSave ? settings.accentColor : Theme.textT)
                     .disabled(!store.canSave)
                     .buttonStyle(.plain)
+                    .padding(.trailing, 8)
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(settings.bg1)
             Rectangle().fill(Theme.divide).frame(height: 1)
 
             ScrollView {

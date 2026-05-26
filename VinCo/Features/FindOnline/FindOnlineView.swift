@@ -51,16 +51,7 @@ struct FindOnlineView: View {
     // MARK: – Body
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Button { dismiss() } label: {
-                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                }.buttonStyle(.plain)
-                Text("Find Online")
-                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
-                Spacer()
-            }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(settings.bg1)
+            ModalNavBar("Find Online", onClose: { dismiss() })
             Rectangle().fill(Theme.divide).frame(height: 1)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {

@@ -48,6 +48,59 @@ struct CloseButton: View {
     }
 }
 
+// MARK: – Modal navigation bar
+// Matches standard iOS nav bar: 44 pt tall, title centred, buttons at system inset.
+// Replaces NavigationStack toolbars to avoid iOS 26 Liquid Glass chrome.
+struct ModalNavBar<T: View>: View {
+    let title:   String
+    let onClose: () -> Void
+    @ViewBuilder let trailing: () -> T
+    @Environment(Settings.self) private var settings
+
+    init(_ title: String, onClose: @escaping () -> Void, @ViewBuilder trailing: @escaping () -> T) {
+        self.title   = title
+        self.onClose = onClose
+        self.trailing = trailing
+    }
+
+    var body: some View {
+        ZStack {
+            // Title — always centred across the full bar width
+            Text(title)
+                .font(Theme.courier(17, .semibold))
+                .foregroundStyle(Theme.textP)
+                .lineLimit(1)
+                .padding(.horizontal, 60) // keep clear of 44 pt buttons + 8 pt inset
+
+            // Leading close + optional trailing action
+            HStack(spacing: 0) {
+                Button(action: onClose) {
+                    Text("✕")
+                        .font(Theme.courier(15))
+                        .foregroundStyle(Theme.textT)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                trailing()
+            }
+            .padding(.horizontal, 8)
+        }
+        .frame(height: 44)
+        .background(settings.bg1)
+    }
+}
+
+extension ModalNavBar where T == EmptyView {
+    /// Convenience init for views with no trailing action.
+    init(_ title: String, onClose: @escaping () -> Void) {
+        self.init(title, onClose: onClose) { EmptyView() }
+    }
+}
+
 // MARK: – Shared section container (palette-aware)
 struct RBSection<C: View>: View {
     @Environment(Settings.self) private var settings
@@ -101,16 +154,7 @@ struct ConditionGuideView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Button { dismiss() } label: {
-                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                }.buttonStyle(.plain)
-                Text("Condition Guide")
-                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
-                Spacer()
-            }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(settings.bg1)
+            ModalNavBar("Condition Guide", onClose: { dismiss() })
             Rectangle().fill(Theme.divide).frame(height: 1)
             ScrollView {
                 VStack(spacing: 0) {

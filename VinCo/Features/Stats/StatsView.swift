@@ -25,14 +25,7 @@ struct StatsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Custom header — close left, title centre, refresh right
-            HStack(spacing: 12) {
-                Button { dismiss() } label: {
-                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                }.buttonStyle(.plain)
-                Text("Stats")
-                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
-                Spacer()
+            ModalNavBar("Stats", onClose: { dismiss() }) {
                 Button {
                     guard !store.isRefreshing else { return }
                     refreshAllPrices()
@@ -40,12 +33,12 @@ struct StatsView: View {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 15))
                         .foregroundStyle(store.isRefreshing ? Theme.textT : settings.accentColor)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(store.isRefreshing)
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(settings.bg1)
             Rectangle().fill(Theme.divide).frame(height: 1)
 
             ScrollView {

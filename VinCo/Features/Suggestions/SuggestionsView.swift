@@ -53,26 +53,19 @@ struct SuggestionsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Custom header — close left, title, refresh right
-            HStack(spacing: 12) {
-                Button { dismiss() } label: {
-                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                }.buttonStyle(.plain)
-                Text("Suggestions")
-                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
-                Spacer()
+            ModalNavBar("Suggestions", onClose: { dismiss() }) {
                 Button {
                     store.send(.refreshTapped(genres: topGenres, artists: topArtists, excluded: excludedKeys))
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 15))
                         .foregroundStyle(store.isLoading ? Theme.textT : settings.accentColor)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(store.isLoading)
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(settings.bg1)
             Rectangle().fill(Theme.divide).frame(height: 1)
 
             providerStrip
@@ -277,31 +270,7 @@ struct SuggestionsView: View {
                         Spacer()
                     }
                 }
-
-                // Top-right: flip button
-                VStack {
-                    HStack {
-                        Spacer()
-                        Button {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
-                                flippedIds = flippedIds.union([rec.id])
-                            }
-                        } label: {
-                            Image(systemName: "hand.thumbsup.fill")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 26, height: 26)
-                                .background(.black.opacity(0.45))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .padding(8)
-                    }
-                    Spacer()
-                }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { selectedSuggestion = rec }
 
             // Meta row
             HStack(spacing: 6) {
@@ -327,6 +296,12 @@ struct SuggestionsView: View {
             .background(settings.bg1)
 
             providerBadge(rec.provider)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
+                flippedIds = flippedIds.union([rec.id])
+            }
         }
         .background(settings.bg2)
         .clipShape(RoundedRectangle(cornerRadius: Theme.cardR))
@@ -393,8 +368,17 @@ struct SuggestionsView: View {
             }
             .background(settings.bg1)
 
-            // Bottom badge + flip-back button
+            // Bottom: flip-back | provider | details
             HStack {
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) { flippedIds = flippedIds.subtracting([rec.id]) }
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Theme.textT)
+                        .padding(.leading, 10)
+                }
+                .buttonStyle(.plain)
                 Spacer()
                 HStack(spacing: 4) {
                     Image(systemName: rec.provider.icon).font(.system(size: 9))
@@ -402,12 +386,10 @@ struct SuggestionsView: View {
                 }
                 .foregroundStyle(Theme.textT)
                 Spacer()
-                Button {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) { flippedIds = flippedIds.subtracting([rec.id]) }
-                } label: {
-                    Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(Theme.textT)
+                Button { selectedSuggestion = rec } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(settings.accentColor)
                         .padding(.trailing, 10)
                 }
                 .buttonStyle(.plain)
@@ -583,8 +565,10 @@ struct SuggestionDetailSheet: View {
 
     @Query private var allRecords: [Record]
 
+    @StateObject private var audio           = AudioPlayer()
     @State private var releaseDetail:    DiscogsReleaseDetail? = nil
     @State private var isLoadingDetail:  Bool                  = false
+    @State private var iTunesTracks:     [Track]?              = nil
 
     // Already in collection or wishlist
     private var alreadyHave: Bool {
@@ -610,14 +594,18 @@ struct SuggestionDetailSheet: View {
                     metaSection
                     if isLoadingDetail {
                         ProgressView().tint(settings.accentColor).padding(.vertical, 24)
-                    } else if let detail = releaseDetail {
-                        if !detail.labels.isEmpty || !detail.country.isEmpty {
-                            detailInfoSection(detail)
+                    } else {
+                        if let detail = releaseDetail {
+                            if !detail.labels.isEmpty || !detail.country.isEmpty {
+                                detailInfoSection(detail)
+                            }
+                            if detail.communityHave > 0 || detail.communityWant > 0 || detail.lowestPrice != nil {
+                                marketSection(detail)
+                            }
                         }
-                        if detail.communityHave > 0 || detail.communityWant > 0 || detail.lowestPrice != nil {
-                            marketSection(detail)
-                        }
-                        if !detail.tracklist.isEmpty {
+                        if let iTracks = iTunesTracks, !iTracks.isEmpty {
+                            iTunesTracklistSection(iTracks)
+                        } else if let detail = releaseDetail, !detail.tracklist.isEmpty {
                             tracklistSection(detail.tracklist)
                         }
                     }
@@ -627,6 +615,7 @@ struct SuggestionDetailSheet: View {
             }
             .scrollIndicators(.hidden)
             .background(settings.bg0.ignoresSafeArea())
+            .onDisappear { audio.stop() }
 
             // Floating close button — overlaid on cover, top-left
             Button { dismiss() } label: {
@@ -638,7 +627,7 @@ struct SuggestionDetailSheet: View {
             }
             .buttonStyle(.plain)
         }
-        .task { await loadReleaseDetail() }
+        .task { await loadDetails() }
     }
 
     // MARK: Cover
@@ -844,11 +833,44 @@ struct SuggestionDetailSheet: View {
         .background(settings.bg2).clipShape(Capsule())
     }
 
-    private func loadReleaseDetail() async {
-        guard suggestion.discogsId > 0, releaseDetail == nil else { return }
+    private func iTunesTracklistSection(_ tracks: [Track]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("TRACKLIST").font(Theme.courier(10, .semibold)).foregroundStyle(Theme.textT)
+                .tracking(1).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 6)
+
+            LazyVStack(spacing: 0) {
+                ForEach(Array(tracks.enumerated()), id: \.element.id) { i, t in
+                    TrackRow(track: t, index: i,
+                             playing: audio.currentURL == t.preview && audio.isPlaying,
+                             progress: audio.currentURL == t.preview ? audio.progress : 0) {
+                        audio.currentURL == t.preview && audio.isPlaying
+                            ? audio.pause() : audio.play(url: t.preview)
+                    }
+                    if i < tracks.count - 1 {
+                        Rectangle().fill(Theme.divide).frame(height: 1).padding(.leading, 52)
+                    }
+                }
+            }
+            .background(settings.bg1)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.sectR))
+            .padding(.horizontal, 14).padding(.bottom, 8)
+        }
+    }
+
+    private func loadDetails() async {
+        guard releaseDetail == nil, iTunesTracks == nil else { return }
         isLoadingDetail = true
-        let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
-        releaseDetail = await fetchDiscogsRelease(id: suggestion.discogsId, token: token)
+        let token     = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
+        let discogsId = suggestion.discogsId
+
+        // Start iTunes fetch concurrently while Discogs fetch runs
+        async let iTunesOp = iTunesClient.liveValue.fetch(suggestion.artist, suggestion.album)
+        if discogsId > 0 {
+            async let discogsOp = fetchDiscogsRelease(id: discogsId, token: token)
+            releaseDetail = await discogsOp
+        }
+        let iResult  = await iTunesOp
+        iTunesTracks = iResult.tracks.isEmpty ? nil : iResult.tracks
         isLoadingDetail = false
     }
 }
