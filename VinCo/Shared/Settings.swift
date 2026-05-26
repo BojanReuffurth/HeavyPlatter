@@ -58,7 +58,6 @@ struct ThemePalette: Equatable {
     var layout:        String = UserDefaults.standard.string(forKey: "rb_layout")      ?? "grid"     { didSet { UserDefaults.standard.set(layout,        forKey: "rb_layout")      } }
     var showArtwork:   Bool   = UserDefaults.standard.object(forKey: "rb_artwork")     as? Bool ?? true  { didSet { UserDefaults.standard.set(showArtwork,   forKey: "rb_artwork")   } }
     var discogsToken:  String = UserDefaults.standard.string(forKey: "rb_discogs")     ?? ""         { didSet { UserDefaults.standard.set(discogsToken,  forKey: "rb_discogs")     } }
-    var spotifyId:     String = UserDefaults.standard.string(forKey: "rb_sp_id")       ?? ""         { didSet { UserDefaults.standard.set(spotifyId,     forKey: "rb_sp_id")       } }
     var currency:      String = UserDefaults.standard.string(forKey: "rb_currency")    ?? "CHF"      { didSet { UserDefaults.standard.set(currency,      forKey: "rb_currency")    } }
     var username:      String = UserDefaults.standard.string(forKey: "rb_username")    ?? ""         { didSet { UserDefaults.standard.set(username,      forKey: "rb_username")    } }
     var isPublic:      Bool   = UserDefaults.standard.object(forKey: "rb_public")      as? Bool ?? false { didSet { UserDefaults.standard.set(isPublic,   forKey: "rb_public")    } }
@@ -85,8 +84,7 @@ struct ThemePalette: Equatable {
         return g
     }
 
-    var accentColor:       Color { Color(hex: accentHex) }
-    var isSpotifyConnected: Bool { UserDefaults.standard.string(forKey: "rb_sp_token") != nil }
+    var accentColor: Color { Color(hex: accentHex) }
 
     // MARK: – Palette-aware background colors (absolute — the palette owns the color)
     private var _palette: ThemePalette {

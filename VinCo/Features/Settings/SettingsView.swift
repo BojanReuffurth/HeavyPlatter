@@ -461,34 +461,6 @@ struct SettingsView: View {
                 }
             }
 
-            // Spotify
-            RBSection("Spotify") {
-                RBRow {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Connection status").font(Theme.courier(14)).foregroundStyle(Theme.textP)
-                            Text(settings.isSpotifyConnected ? "Connected ✓" : "Not connected")
-                                .font(Theme.courier(12))
-                                .foregroundStyle(settings.isSpotifyConnected ? .green : Theme.textT)
-                        }
-                        Spacer()
-                        if settings.isSpotifyConnected {
-                            Button("Disconnect") {
-                                UserDefaults.standard.removeObject(forKey: "rb_sp_token")
-                                UserDefaults.standard.removeObject(forKey: "rb_sp_expiry")
-                                UserDefaults.standard.removeObject(forKey: "rb_sp_refresh")
-                            }
-                            .font(Theme.courier(12))
-                            .foregroundStyle(.red)
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                RBRow(divider: false) {
-                    Text("Tap the ✦ wand button on the home screen, then choose Spotify to sign in with your account.")
-                        .font(Theme.courier(12)).foregroundStyle(Theme.textT)
-                }
-            }
         }
     }
 

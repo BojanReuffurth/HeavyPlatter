@@ -12,9 +12,9 @@ struct SuggestionsFeature {
 
         nonisolated init(_ raw: MPMediaLibraryAuthorizationStatus) {
             switch raw {
-            case .authorized:             self = .authorized
-            case .denied, .restricted:   self = .denied
-            default:                     self = .notDetermined
+            case .authorized:           self = .authorized
+            case .denied, .restricted:  self = .denied
+            default:                    self = .notDetermined
             }
         }
     }
@@ -23,34 +23,28 @@ struct SuggestionsFeature {
 
     @ObservableState
     struct State: Equatable {
-        var suggestions:      [SuggestedRecord]  = []
-        var isLoading:        Bool               = false
-        var enabledProviders: Set<MusicProvider> = [.collectionDNA]
-        var refreshSeed:      Int                = 0
-        var appleMusicStatus: AppleMusicStatus   = .notDetermined
-        var spotifyConnected: Bool               = false
-        var spotifyExpired:   Bool               = false   // token present but expired
+        var suggestions:      [SuggestedRecord]     = []
+        var isLoading:        Bool                  = false
+        var enabledProviders: Set<MusicProvider>    = [.collectionDNA]
+        var refreshSeed:      Int                   = 0
+        var appleMusicStatus: AppleMusicStatus      = .notDetermined
+        var preferences:      SuggestionPreferences = SuggestionPreferences()
     }
 
     // MARK: – Action
 
     enum Action: BindableAction {
         case binding(BindingAction<State>)
-        /// Called once when the sheet appears; seeds the first fetch.
         case appeared(genres: [String], artists: [String], excluded: Set<String>)
-        /// User tapped the refresh button.
         case refreshTapped(genres: [String], artists: [String], excluded: Set<String>)
-        /// Toggle a provider chip.
         case providerToggled(MusicProvider, genres: [String], artists: [String], excluded: Set<String>)
-        /// Result from the suggestions effect.
         case suggestionsLoaded([SuggestedRecord])
-        /// Request Apple Music library permission, then re-fetch.
         case requestAppleMusic(genres: [String], artists: [String], excluded: Set<String>)
         case appleMusicStatusChanged(AppleMusicStatus)
-        /// Called from the view after Spotify OAuth completes.
-        case spotifyTokenSaved
-        /// Called when a Spotify request returns 401 (expired token).
-        case spotifyTokenExpired
+        /// User liked a suggestion — boosts similar records in future fetches.
+        case thumbsUp(SuggestedRecord)
+        /// User disliked a suggestion — removes it now, never shows it again.
+        case thumbsDown(SuggestedRecord)
     }
 
     // MARK: – Dependency
@@ -66,9 +60,8 @@ struct SuggestionsFeature {
 
             case .appeared(let genres, let artists, let excluded):
                 state.enabledProviders = loadPersistedProviders()
+                state.preferences      = loadPreferences()
                 state.appleMusicStatus = AppleMusicStatus(MPMediaLibrary.authorizationStatus())
-                state.spotifyConnected = isSpotifyConnected()
-                state.spotifyExpired   = false
                 guard !state.isLoading, state.suggestions.isEmpty else { return .none }
                 state.isLoading = true
                 return fetchEffect(state: state, genres: genres, artists: artists, excluded: excluded)
@@ -80,13 +73,12 @@ struct SuggestionsFeature {
 
             case .providerToggled(let provider, let genres, let artists, let excluded):
                 if state.enabledProviders.contains(provider) {
-                    guard state.enabledProviders.count > 1 else { return .none } // keep at least one
+                    guard state.enabledProviders.count > 1 else { return .none }
                     state.enabledProviders.remove(provider)
                 } else {
                     state.enabledProviders.insert(provider)
                 }
                 persistProviders(state.enabledProviders)
-                // Re-fetch with the new provider set
                 state.isLoading = true
                 return fetchEffect(state: state, genres: genres, artists: artists, excluded: excluded)
 
@@ -111,13 +103,17 @@ struct SuggestionsFeature {
                 state.appleMusicStatus = s
                 return .none
 
-            case .spotifyTokenSaved:
-                state.spotifyConnected = true
-                state.spotifyExpired   = false
+            // MARK: Thumbs Up — boost artist + genre for future fetches
+            case .thumbsUp(let rec):
+                state.preferences.like(artist: rec.artist, genre: rec.genre)
+                savePreferences(state.preferences)
                 return .none
 
-            case .spotifyTokenExpired:
-                state.spotifyExpired = true
+            // MARK: Thumbs Down — remove immediately, never show again
+            case .thumbsDown(let rec):
+                state.suggestions.removeAll { $0.id == rec.id }
+                state.preferences.dislikedIds.insert(rec.id)
+                savePreferences(state.preferences)
                 return .none
 
             case .binding:
@@ -126,7 +122,7 @@ struct SuggestionsFeature {
         }
     }
 
-    // MARK: – Helpers
+    // MARK: – Fetch effect
 
     private func fetchEffect(state: State,
                              genres: [String], artists: [String],
@@ -134,24 +130,21 @@ struct SuggestionsFeature {
         let providers    = state.enabledProviders
         let seed         = state.refreshSeed
         let discogsToken = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
-        let spotifyToken = UserDefaults.standard.string(forKey: "rb_sp_token") ?? ""
+        let prefs        = state.preferences
         let client       = suggestionClient
+        // Merge user-excluded keys with disliked IDs
+        let fullExcluded = excluded.union(prefs.dislikedIds)
 
         return .run { send in
             let req = SuggestionRequest(
-                genres: genres, artists: artists, excluded: excluded,
+                genres: genres, artists: artists, excluded: fullExcluded,
                 providers: providers, seed: seed,
-                discogsToken: discogsToken, spotifyToken: spotifyToken
+                discogsToken: discogsToken,
+                likedArtists: prefs.likedArtists, likedGenres: prefs.likedGenres
             )
             let results = await client.suggest(req)
             await send(.suggestionsLoaded(results))
         }
-    }
-
-    private func isSpotifyConnected() -> Bool {
-        guard let token = UserDefaults.standard.string(forKey: "rb_sp_token"), !token.isEmpty else { return false }
-        let expiry = UserDefaults.standard.double(forKey: "rb_sp_expiry")
-        return expiry == 0 || Date().timeIntervalSince1970 < expiry
     }
 
     // MARK: – Provider persistence
@@ -169,5 +162,19 @@ struct SuggestionsFeature {
               let str  = String(data: data, encoding: .utf8)
         else { return }
         UserDefaults.standard.set(str, forKey: "rb_providers")
+    }
+
+    // MARK: – Preferences persistence
+
+    private func loadPreferences() -> SuggestionPreferences {
+        guard let data = UserDefaults.standard.data(forKey: "rb_sg_prefs"),
+              let prefs = try? JSONDecoder().decode(SuggestionPreferences.self, from: data)
+        else { return SuggestionPreferences() }
+        return prefs
+    }
+
+    private func savePreferences(_ prefs: SuggestionPreferences) {
+        guard let data = try? JSONEncoder().encode(prefs) else { return }
+        UserDefaults.standard.set(data, forKey: "rb_sg_prefs")
     }
 }

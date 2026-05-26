@@ -147,7 +147,7 @@ struct BackupManager {
     // MARK: – Smart CSV import
     @MainActor
     static func importCSV(_ csv: String, context: ModelContext) -> (Int, Int, String?) {
-        var lines = csv.components(separatedBy: "\n")
+        let lines = csv.components(separatedBy: "\n")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 

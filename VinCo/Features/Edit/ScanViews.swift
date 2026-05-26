@@ -2,6 +2,7 @@ import SwiftUI
 import VisionKit
 import Vision
 import UIKit
+import PhotosUI
 
 // MARK: – Barcode scanner sheet
 // Full-screen live barcode scanner using DataScannerViewController (iOS 17+).
@@ -110,7 +111,6 @@ private struct _BarcodeScannerVC: UIViewControllerRepresentable {
             for item in addedItems {
                 if case .barcode(let b) = item, let val = b.payloadStringValue {
                     fired = true
-                    // Brief haptic feedback on successful scan
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     onDetected(val)
                     return
@@ -162,22 +162,140 @@ struct CoverCameraView: UIViewControllerRepresentable {
     }
 }
 
-// MARK: – Vision text recognition helper
-// Extracts the most prominent text lines from an image (e.g. an album cover or screenshot)
-// and returns them joined as a Discogs search query.
-nonisolated func recognizeAlbumText(from data: Data) async -> String {
-    guard let uiImage = UIImage(data: data), let cgImage = uiImage.cgImage else { return "" }
+// MARK: – Photo library picker (PHPickerViewController)
+// Uses NSItemProvider.loadObject(ofClass: UIImage.self) which reliably handles
+// JPEG, PNG, HEIC, WebP, and iCloud-stored photos — unlike loadTransferable which
+// silently fails for many image types.
+struct PhotoLibraryPicker: UIViewControllerRepresentable {
+    let onImageSelected: (Data) -> Void
+    let onCancel:        () -> Void
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.selectionLimit = 1
+        config.filter         = .images
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ vc: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onImageSelected: onImageSelected, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let onImageSelected: (Data) -> Void
+        let onCancel:        () -> Void
+
+        init(onImageSelected: @escaping (Data) -> Void, onCancel: @escaping () -> Void) {
+            self.onImageSelected = onImageSelected; self.onCancel = onCancel
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            guard let result = results.first else { onCancel(); return }
+            let provider = result.itemProvider
+            guard provider.canLoadObject(ofClass: UIImage.self) else { onCancel(); return }
+
+            // loadObject is called on an arbitrary queue — bridge back to MainActor
+            provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    if let image = object as? UIImage,
+                       let data  = image.jpegData(compressionQuality: 0.88) {
+                        self.onImageSelected(data)
+                    } else {
+                        self.onCancel()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: – Vision text recognition
+// Scores text observations by visual prominence (bounding-box area × OCR confidence)
+// so artist/album names (large text) beat navigation chrome and footnotes.
+// Returns (query, rawLines) so the caller can show what was recognised.
+nonisolated func recognizeAlbumText(from data: Data) async -> (query: String, lines: [String]) {
+    guard let uiImage = UIImage(data: data), let cgImage = uiImage.cgImage else {
+        return ("", [])
+    }
     return await withCheckedContinuation { continuation in
         let request = VNRecognizeTextRequest { req, _ in
-            let lines = (req.results as? [VNRecognizedTextObservation])?
-                .compactMap { $0.topCandidates(1).first?.string } ?? []
-            // Top lines have the highest confidence — typically artist + album on a cover
-            let query = lines.prefix(5).joined(separator: " ")
-            continuation.resume(returning: query)
+            let observations = (req.results as? [VNRecognizedTextObservation]) ?? []
+
+            // Score: larger bounding box + higher confidence = more prominent text
+            let scored: [(text: String, score: Double)] = observations.compactMap { obs in
+                guard let top = obs.topCandidates(1).first else { return nil }
+                let text = top.string
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .trimmingCharacters(in: .init(charactersIn: ".,;:!?-–—\"'"))
+                guard text.count >= 2 else { return nil }
+                let box   = obs.boundingBox
+                let score = Double(top.confidence) * box.width * box.height * 1_000
+                return (text, score)
+            }
+            .sorted { $0.score > $1.score }
+
+            let rawLines = scored.prefix(12).map(\.text)
+
+            // Filter common screenshot / app chrome noise
+            let meaningful = scored
+                .map(\.text)
+                .filter { !isScreenshotNoise($0) }
+
+            // Build query from top meaningful strings, fall back to top raw if all filtered
+            let queryParts = meaningful.count >= 2
+                ? Array(meaningful.prefix(4))
+                : Array(scored.prefix(3).map(\.text))
+
+            let query = queryParts.joined(separator: " ")
+            continuation.resume(returning: (query, Array(rawLines)))
         }
-        request.recognitionLevel       = .accurate
+        // Only process text whose height is ≥ 3% of the image — skips status-bar
+        // text, footnotes, tiny UI labels while keeping titles and artist names.
+        request.minimumTextHeight     = 0.03
+        request.recognitionLevel      = .accurate
         request.usesLanguageCorrection = false
+
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         try? handler.perform([request])
     }
+}
+
+/// Returns true for strings that are almost certainly app UI chrome rather than music metadata.
+private nonisolated func isScreenshotNoise(_ text: String) -> Bool {
+    // Pure digit strings (track numbers, ratings, counts)
+    if text.allSatisfy({ $0.isNumber || $0 == "," || $0 == "." }) { return true }
+
+    // Prices / currency
+    let firstChar = text.unicodeScalars.first
+    let currencySymbols: Set<Unicode.Scalar> = ["$", "€", "£", "¥", "₩", "₪", "₹"]
+    if let c = firstChar, currencySymbols.contains(c) { return true }
+
+    // Track duration pattern "3:45" or "1:04:12"
+    let durationPattern = #"^\d{1,2}(:\d{2}){1,2}$"#
+    if text.range(of: durationPattern, options: .regularExpression) != nil { return true }
+
+    // Very common app UI words (exact or leading match)
+    let lower = text.lowercased()
+    let uiExact: Set<String> = [
+        "want", "have", "add", "buy", "sell", "shop", "cart",
+        "follow", "following", "followers", "like", "unlike", "save",
+        "share", "report", "flag", "block", "edit", "delete", "remove",
+        "more", "less", "ok", "cancel", "done", "back",
+        "home", "search", "browse", "radio", "podcasts", "charts",
+        "library", "settings", "profile", "account", "sign in", "log in",
+        "discogs", "marketplace", "community", "collection", "wishlist",
+        "spotify", "apple music", "tidal", "deezer", "soundcloud",
+        "now playing", "up next", "queue", "lyrics", "connect",
+        "previous", "next", "pause", "play", "shuffle", "repeat",
+        "explicit", "clean", "e", "clean version",
+        "reviews", "rating", "stars", "tracklist", "credits",
+    ]
+    if uiExact.contains(lower) { return true }
+
+    return false
 }
