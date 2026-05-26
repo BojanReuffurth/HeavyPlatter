@@ -13,7 +13,7 @@ struct VinylStore: Identifiable {
     let mapItem:   MKMapItem
 
     var distanceText: String {
-        if Locale.current.usesMetricSystem {
+        if Locale.current.measurementSystem == .metric {
             return distance < 1000
                 ? String(format: "%.0f m",  distance)
                 : String(format: "%.1f km", distance / 1000)
@@ -128,31 +128,7 @@ struct StoreLocatorView: View {
 
     // MARK: – Header
     private var header: some View {
-        HStack(spacing: 0) {
-            Button { dismiss() } label: {
-                Text("✕")
-                    .font(Theme.courier(15))
-                    .foregroundStyle(Theme.textT)
-            }
-            .buttonStyle(.plain)
-            .padding(.leading, 16)
-
-            Spacer()
-
-            Text("STORE LOCATOR")
-                .font(Theme.courier(13, .semibold))
-                .foregroundStyle(Theme.textS)
-
-            Spacer()
-
-            // Invisible spacer to balance the ✕
-            Text("✕")
-                .font(Theme.courier(15))
-                .foregroundStyle(.clear)
-                .padding(.trailing, 16)
-        }
-        .frame(height: 48)
-        .background(settings.bg1)
+        ModalNavBar("Store Locator", onClose: { dismiss() })
     }
 
     // MARK: – Map
@@ -399,20 +375,31 @@ struct StoreLocatorView: View {
             guard let resp = try? await MKLocalSearch(request: req).start() else { continue }
 
             for item in resp.mapItems {
+                // Extract location fields — use iOS 26 API where available, else fall back to placemark.
+                let coordinate: CLLocationCoordinate2D
+                let itemLoc:    CLLocation?
+                let address:    String
+                if #available(iOS 26, *) {
+                    coordinate = item.location.coordinate
+                    itemLoc    = item.location
+                    address    = item.address?.shortAddress ?? item.address?.fullAddress ?? ""
+                } else {
+                    let pl     = item.placemark
+                    coordinate = pl.coordinate
+                    itemLoc    = pl.location
+                    address    = [pl.thoroughfare, pl.locality].compactMap { $0 }.joined(separator: ", ")
+                }
+
                 // De-duplicate by rounded coordinate
-                let key = String(format: "%.4f,%.4f",
-                                 item.placemark.coordinate.latitude,
-                                 item.placemark.coordinate.longitude)
+                let key = String(format: "%.4f,%.4f", coordinate.latitude, coordinate.longitude)
                 guard !seenKeys.contains(key) else { continue }
                 seenKeys.insert(key)
+                guard let itemLoc else { continue }
 
-                guard let itemLoc = item.placemark.location else { continue }
-                let parts = [item.placemark.thoroughfare, item.placemark.locality]
-                    .compactMap { $0 }
                 found.append(VinylStore(
                     name:       item.name ?? "Record Store",
-                    address:    parts.joined(separator: ", "),
-                    coordinate: item.placemark.coordinate,
+                    address:    address,
+                    coordinate: coordinate,
                     distance:   location.distance(from: itemLoc),
                     mapItem:    item
                 ))

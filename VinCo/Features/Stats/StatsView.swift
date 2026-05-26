@@ -79,12 +79,13 @@ struct StatsView: View {
             for (i, rec) in eligible.enumerated() {
                 guard let did = rec.discogsId else { continue }
                 if let price = await DiscogsClient.liveValue.fetchPrice(did, token) {
-                    await MainActor.run { rec.currentValue = price; updated += 1 }
+                    rec.currentValue = price
+                    updated += 1
                 }
-                await MainActor.run { store.send(.refreshProgress("Fetching… \(i+1)/\(eligible.count)")) }
+                store.send(.refreshProgress("Fetching… \(i+1)/\(eligible.count)"))
                 try? await Task.sleep(nanoseconds: 350_000_000)
             }
-            await MainActor.run { store.send(.refreshDone("Updated \(updated)/\(eligible.count) records ✓")) }
+            store.send(.refreshDone("Updated \(updated)/\(eligible.count) records ✓"))
         }
     }
 

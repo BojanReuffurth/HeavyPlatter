@@ -16,6 +16,13 @@ struct CollectionView: View {
     private var conditions: [String] { options(\.condition) }
     private var formats:    [String] { options(\.format) }
     private var countries:  [String] { options(\.country) }
+    /// Screen width via active UIWindowScene — avoids deprecated UIScreen.main.
+    private var screenWidth: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.screen.bounds.width ?? 393
+    }
+
     private func options(_ kp: KeyPath<Record, String>) -> [String] {
         ["All"] + Set(records.map { $0[keyPath: kp] }.filter { !$0.isEmpty }).sorted()
     }
@@ -90,7 +97,7 @@ struct CollectionView: View {
                     onDelete:  { ctx.delete(rec);               dismissExpanded() },
                     onDismiss: { dismissExpanded() }
                 )
-                .frame(width: min(UIScreen.main.bounds.width * 0.88, 360))
+                .frame(width: min(screenWidth * 0.88, 360))
                 .transition(.asymmetric(
                     insertion: .scale(scale: 0.55).combined(with: .opacity),
                     removal:   .scale(scale: 0.55).combined(with: .opacity)
@@ -505,7 +512,11 @@ struct FlipDetailCard: View {
         }
         .overlay(alignment: .topTrailing) {
             Button { onDismiss() } label: {
-                Text("✕").font(Theme.courier(13, .medium)).foregroundStyle(.white.opacity(0.7)).padding(10)
+                Text("✕")
+                    .font(Theme.courier(13, .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }.buttonStyle(.plain)
         }
         .aspectRatio(1, contentMode: .fit)
@@ -532,7 +543,11 @@ struct FlipDetailCard: View {
                 }
                 Spacer()
                 Button { onDismiss() } label: {
-                    Text("✕").font(Theme.courier(13)).foregroundStyle(Theme.textT)
+                    Text("✕")
+                        .font(Theme.courier(13))
+                        .foregroundStyle(Theme.textT)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }.buttonStyle(.plain)
             }
             .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)

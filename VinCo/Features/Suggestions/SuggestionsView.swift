@@ -540,12 +540,12 @@ struct SuggestionsView: View {
 private final class SpotifyAuthPresenter: NSObject, ASWebAuthenticationPresentationContextProviding, @unchecked Sendable {
     static let shared = SpotifyAuthPresenter()
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let target = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
-        if let target { return ASPresentationAnchor(windowScene: target) }
-        return scenes.flatMap(\.windows).first(where: \.isKeyWindow)
-            ?? scenes.flatMap(\.windows).first
-            ?? UIWindow(frame: .zero)
+        let scenes  = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let windows = scenes.flatMap(\.windows)
+        // Prefer existing key window, then any window; otherwise create on active scene.
+        if let w = windows.first(where: \.isKeyWindow) ?? windows.first { return w }
+        let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first!
+        return ASPresentationAnchor(windowScene: scene)
     }
 }
 
@@ -618,14 +618,16 @@ struct SuggestionDetailSheet: View {
             .onDisappear { audio.stop() }
 
             // Floating close button — overlaid on cover, top-left
+            // frame(44,44) + .padding(.leading,8) matches ModalNavBar centre-from-edge
             Button { dismiss() } label: {
                 Text("✕")
                     .font(Theme.courier(15))
                     .foregroundStyle(.white)
-                    .padding(12)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.leading, 8)
         }
         .task { await loadDetails() }
     }
