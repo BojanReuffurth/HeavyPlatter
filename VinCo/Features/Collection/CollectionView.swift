@@ -346,10 +346,6 @@ struct CollectionView: View {
                 }
             }
             Spacer()
-            Button { store.send(.editTapped(rec)) } label: {
-                Image(systemName: "pencil").foregroundStyle(Theme.textT)
-            }
-            .buttonStyle(.plain)
         }
         .padding(12)
         .background(settings.bg1)
@@ -518,14 +514,16 @@ struct FlipDetailCard: View {
     // Back — full record detail, fully interactive
     private var back: some View {
         VStack(spacing: 0) {
-            // Header: flip-back chevron + title + dismiss
-            HStack(spacing: 8) {
+            // Header: flip-back (photo icon, wide touch target) + aligned title + dismiss
+            HStack(spacing: 4) {
                 Button {
                     withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) { isFlipped = false }
                 } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
+                    Image(systemName: "photo")
+                        .font(.system(size: 13))
                         .foregroundStyle(Theme.textT)
+                        .frame(width: 54, alignment: .leading)
+                        .contentShape(Rectangle())
                 }.buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 2) {

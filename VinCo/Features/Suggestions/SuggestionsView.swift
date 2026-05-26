@@ -9,96 +9,93 @@ import MediaPlayer
 // 1. Register VinCo at developer.spotify.com (free).
 // 2. Add redirect URI: vinco-app://spotify
 // 3. Paste your Client ID below — users just tap "Connect with Spotify" in the app.
-private let kSpotifyClientId = ""
+private let kSpotifyClientId = "72560920d9cd4dcaa0c062ae9db0bead"
+
+// MARK: – Main view
 
 struct SuggestionsView: View {
     @Bindable var store: StoreOf<SuggestionsFeature>
     @Environment(\.modelContext) private var ctx
     @Environment(Settings.self)  private var settings
+    @Environment(\.dismiss)      private var dismiss
 
     @Query private var allRecords: [Record]
 
-    // MARK: – Derived collection data (passed into the TCA actions)
+    // MARK: Derived collection data
 
     private var topGenres: [String] {
-        var counts: [String: Int] = [:]
-        allRecords.filter { !$0.isWishlist }.forEach { counts[$0.genre, default: 0] += 1 }
-        return counts.sorted { $0.value > $1.value }.map(\.key).filter { !$0.isEmpty }
+        var c: [String: Int] = [:]
+        allRecords.filter { !$0.isWishlist }.forEach { c[$0.genre, default: 0] += 1 }
+        return c.sorted { $0.value > $1.value }.map(\.key).filter { !$0.isEmpty }
     }
 
     private var topArtists: [String] {
-        var counts: [String: Int] = [:]
-        allRecords.filter { !$0.isWishlist }.forEach { counts[$0.artist, default: 0] += 1 }
-        return counts.sorted { $0.value > $1.value }.map(\.key).filter { !$0.isEmpty }
+        var c: [String: Int] = [:]
+        allRecords.filter { !$0.isWishlist }.forEach { c[$0.artist, default: 0] += 1 }
+        return c.sorted { $0.value > $1.value }.map(\.key).filter { !$0.isEmpty }
     }
 
     private var excludedKeys: Set<String> {
         Set(allRecords.map { "\($0.artist.lowercased())|\($0.album.lowercased())" })
     }
 
-    // Tracks which suggestions were added this session (for immediate card feedback)
-    @State private var addedIds:            Set<String>      = []
-    @State private var selectedSuggestion:  SuggestedRecord? = nil
-    @State private var spotifyAuthError:    String?          = nil
-    @State private var isAuthenticatingSpotify               = false
-    @State private var pkceVerifier:        String           = ""
+    // MARK: View state
+    @State private var addedIds:           Set<String>      = []
+    @State private var flippedIds:         Set<String>      = []
+    @State private var selectedSuggestion: SuggestedRecord? = nil
+    @State private var spotifyAuthError:   String?          = nil
+    @State private var isAuthenticatingSpotify              = false
+    @State private var pkceVerifier:       String           = ""
 
     private let cols = [GridItem(.adaptive(minimum: 158), spacing: 12)]
 
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                providerStrip
-                Rectangle().fill(Theme.divide).frame(height: 1)
+    // MARK: Body
 
-                if store.isLoading {
-                    loadingView
-                } else if store.suggestions.isEmpty {
-                    emptyView
-                } else {
-                    suggestionsGrid
+    var body: some View {
+        VStack(spacing: 0) {
+            // Custom header — close left, title, refresh right
+            HStack(spacing: 12) {
+                Button { dismiss() } label: {
+                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+                }.buttonStyle(.plain)
+                Text("Suggestions")
+                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
+                Spacer()
+                Button {
+                    store.send(.refreshTapped(genres: topGenres, artists: topArtists, excluded: excludedKeys))
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 15))
+                        .foregroundStyle(store.isLoading ? Theme.textT : settings.accentColor)
                 }
+                .buttonStyle(.plain)
+                .disabled(store.isLoading)
             }
-            .background(settings.bg0.ignoresSafeArea())
-            .navigationTitle("Record Suggestions")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(settings.bg1, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    CloseButton()
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        store.send(.refreshTapped(
-                            genres: topGenres, artists: topArtists, excluded: excludedKeys))
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(store.isLoading ? Theme.textT : settings.accentColor)
-                    }
-                    .disabled(store.isLoading)
-                }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(settings.bg1)
+            Rectangle().fill(Theme.divide).frame(height: 1)
+
+            providerStrip
+            Rectangle().fill(Theme.divide).frame(height: 1)
+            if store.isLoading {
+                loadingView
+            } else if store.suggestions.isEmpty {
+                emptyView
+            } else {
+                suggestionsGrid
             }
         }
-        .task {
-            store.send(.appeared(genres: topGenres, artists: topArtists, excluded: excludedKeys))
-        }
-        // Detail sheet — opens when a card cover is tapped
+        .background(settings.bg0.ignoresSafeArea())
+        .task { store.send(.appeared(genres: topGenres, artists: topArtists, excluded: excludedKeys)) }
         .sheet(item: $selectedSuggestion) { suggestion in
-            SuggestionDetailSheet(
-                suggestion: suggestion,
-                onAdd: { addToWishlist(suggestion) }
-            )
-            .environment(settings)
-            .preferredColorScheme(settings.preferredScheme)
-            .environment(\.font, Theme.courier(14))
+            SuggestionDetailSheet(suggestion: suggestion, onAdd: { addToWishlist(suggestion) })
+                .environment(settings)
+                .preferredColorScheme(settings.preferredScheme)
+                .environment(\.font, Theme.courier(14))
         }
         .alert("Spotify Error", isPresented: .constant(spotifyAuthError != nil)) {
             Button("OK") { spotifyAuthError = nil }
-        } message: {
-            Text(spotifyAuthError ?? "")
-        }
+        } message: { Text(spotifyAuthError ?? "") }
     }
 
     // MARK: – Provider strip
@@ -106,9 +103,7 @@ struct SuggestionsView: View {
     private var providerStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                ForEach(MusicProvider.allCases, id: \.self) { provider in
-                    providerChip(provider)
-                }
+                ForEach(MusicProvider.allCases, id: \.self) { providerChip($0) }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
         }
@@ -119,23 +114,15 @@ struct SuggestionsView: View {
     private func providerChip(_ provider: MusicProvider) -> some View {
         let enabled   = store.enabledProviders.contains(provider)
         let available = isAvailable(provider)
-
-        Button {
-            handleProviderTap(provider)
-        } label: {
+        Button { handleProviderTap(provider) } label: {
             HStack(spacing: 6) {
-                Image(systemName: available ? provider.icon : "lock.fill")
-                    .font(.system(size: 12))
+                Image(systemName: available ? provider.icon : "lock.fill").font(.system(size: 12))
                 Text(provider.displayName)
                     .font(Theme.courier(12, enabled && available ? .semibold : .regular))
-
                 if provider == .spotify && store.spotifyExpired {
-                    Text("EXPIRED")
-                        .font(Theme.courier(8, .bold))
-                        .foregroundStyle(.orange)
+                    Text("EXPIRED").font(Theme.courier(8, .bold)).foregroundStyle(.orange)
                         .padding(.horizontal, 4).padding(.vertical, 1)
-                        .background(Color.orange.opacity(0.2))
-                        .clipShape(Capsule())
+                        .background(Color.orange.opacity(0.2)).clipShape(Capsule())
                 }
                 if isAuthenticatingSpotify && provider == .spotify {
                     ProgressView().scaleEffect(0.7).tint(.white)
@@ -145,22 +132,17 @@ struct SuggestionsView: View {
             .padding(.horizontal, 14).padding(.vertical, 8)
             .background(chipBackground(provider: provider, enabled: enabled, available: available))
             .clipShape(Capsule())
-            .overlay {
-                if !available {
-                    Capsule().stroke(Theme.divide, lineWidth: 1)
-                }
-            }
+            .overlay { if !available { Capsule().stroke(Theme.divide, lineWidth: 1) } }
         }
         .buttonStyle(.plain)
     }
 
     private func chipForeground(provider: MusicProvider, enabled: Bool, available: Bool) -> Color {
-        if !available { return Theme.textT }
-        return enabled ? .black : Theme.textS
+        !available ? Theme.textT : (enabled ? .black : Theme.textS)
     }
 
     private func chipBackground(provider: MusicProvider, enabled: Bool, available: Bool) -> Color {
-        if !available { return settings.bg2 }
+        guard available else { return settings.bg2 }
         if enabled {
             switch provider {
             case .collectionDNA: return settings.accentColor
@@ -171,8 +153,6 @@ struct SuggestionsView: View {
         return settings.bg2
     }
 
-    // MARK: – Provider availability
-
     private func isAvailable(_ provider: MusicProvider) -> Bool {
         switch provider {
         case .collectionDNA: return true
@@ -181,25 +161,19 @@ struct SuggestionsView: View {
         }
     }
 
-    // MARK: – Provider tap handling
-
     private func handleProviderTap(_ provider: MusicProvider) {
         switch provider {
         case .collectionDNA:
             store.send(.providerToggled(provider, genres: topGenres, artists: topArtists, excluded: excludedKeys))
-
         case .appleMusic:
             switch store.appleMusicStatus {
             case .authorized:
                 store.send(.providerToggled(provider, genres: topGenres, artists: topArtists, excluded: excludedKeys))
             case .denied:
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
+                if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
             case .notDetermined:
                 store.send(.requestAppleMusic(genres: topGenres, artists: topArtists, excluded: excludedKeys))
             }
-
         case .spotify:
             if store.spotifyConnected && !store.spotifyExpired {
                 store.send(.providerToggled(provider, genres: topGenres, artists: topArtists, excluded: excludedKeys))
@@ -209,15 +183,13 @@ struct SuggestionsView: View {
         }
     }
 
-    // MARK: – Loading & empty states
+    // MARK: – Loading / empty states
 
     private var loadingView: some View {
         VStack(spacing: 20) {
             Spacer()
             ProgressView().scaleEffect(1.4).tint(settings.accentColor)
-            Text("Discovering vinyl…")
-                .font(Theme.courier(14))
-                .foregroundStyle(Theme.textT)
+            Text("Discovering vinyl…").font(Theme.courier(14)).foregroundStyle(Theme.textT)
             Spacer()
         }
     }
@@ -225,25 +197,16 @@ struct SuggestionsView: View {
     private var emptyView: some View {
         VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "waveform.slash")
-                .font(.system(size: 52))
-                .foregroundStyle(Theme.textT)
-            Text("No suggestions found")
-                .font(Theme.courier(16))
-                .foregroundStyle(Theme.textS)
-            Text("Try enabling more providers above,\nor add records to your collection\nso we can learn your taste.")
-                .font(Theme.courier(12))
-                .foregroundStyle(Theme.textT)
-                .multilineTextAlignment(.center)
+            Image(systemName: "waveform.slash").font(.system(size: 52)).foregroundStyle(Theme.textT)
+            Text("No suggestions found").font(Theme.courier(16)).foregroundStyle(Theme.textS)
+            Text("Try enabling more providers,\nor add records to your collection.")
+                .font(Theme.courier(12)).foregroundStyle(Theme.textT).multilineTextAlignment(.center)
             Button {
                 store.send(.refreshTapped(genres: topGenres, artists: topArtists, excluded: excludedKeys))
             } label: {
-                Label("Try Again", systemImage: "arrow.clockwise")
-                    .font(Theme.courier(14, .semibold))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 24).padding(.vertical, 11)
-                    .background(settings.accentColor)
-                    .clipShape(Capsule())
+                Label("Try Again", systemImage: "arrow.clockwise").font(Theme.courier(14, .semibold))
+                    .foregroundStyle(.black).padding(.horizontal, 24).padding(.vertical, 11)
+                    .background(settings.accentColor).clipShape(Capsule())
             }
             .buttonStyle(.plain)
             Spacer()
@@ -256,79 +219,106 @@ struct SuggestionsView: View {
     private var suggestionsGrid: some View {
         ScrollView {
             LazyVGrid(columns: cols, spacing: 12) {
-                ForEach(store.suggestions) { suggestion in
-                    suggestionCard(suggestion)
-                }
+                ForEach(store.suggestions) { suggestionCard($0) }
             }
-            .padding(12)
-            .padding(.bottom, 32)
+            .padding(12).padding(.bottom, 32)
         }
         .scrollIndicators(.hidden)
     }
 
+    // MARK: – Card (flippable)
+
     @ViewBuilder
     private func suggestionCard(_ rec: SuggestedRecord) -> some View {
+        let isFlipped    = flippedIds.contains(rec.id)
         let alreadyAdded = addedIds.contains(rec.id) || excludedKeys.contains(rec.id)
 
+        ZStack {
+            // Front face
+            cardFront(rec, alreadyAdded: alreadyAdded)
+                .rotation3DEffect(.degrees(isFlipped ? -90 : 0), axis: (x: 0, y: 1, z: 0))
+                .opacity(isFlipped ? 0 : 1)
+
+            // Back face
+            cardBack(rec)
+                .rotation3DEffect(.degrees(isFlipped ? 0 : 90), axis: (x: 0, y: 1, z: 0))
+                .opacity(isFlipped ? 1 : 0)
+        }
+        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: isFlipped)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cardR)
+                .stroke(alreadyAdded ? Color.green.opacity(0.4) : Color.clear, lineWidth: 1.5)
+        )
+    }
+
+    // MARK: – Card front
+
+    @ViewBuilder
+    private func cardFront(_ rec: SuggestedRecord, alreadyAdded: Bool) -> some View {
         VStack(spacing: 0) {
+            // Cover + overlays
+            ZStack {
+                coverImage(for: rec)
+                    .frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit).clipped()
 
-            // ── Tappable cover area → opens detail sheet ──────────────────
-            Button { selectedSuggestion = rec } label: {
-                ZStack(alignment: .bottomLeading) {
-                    coverImage(for: rec)
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fit)
-                        .clipped()
+                // Bottom gradient
+                LinearGradient(colors: [.clear, .black.opacity(0.75)], startPoint: .center, endPoint: .bottom)
+                    .aspectRatio(1, contentMode: .fit)
 
-                    // Bottom gradient so text is legible over any cover
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.75)],
-                        startPoint: .center, endPoint: .bottom)
-                        .aspectRatio(1, contentMode: .fit)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(rec.album)
-                            .font(Theme.courier(13, .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        Text(rec.artist)
-                            .font(Theme.courier(11))
-                            .foregroundStyle(.white.opacity(0.80))
-                            .lineLimit(1)
+                // Bottom-left: album / artist
+                VStack {
+                    Spacer()
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(rec.album).font(Theme.courier(13, .bold)).foregroundStyle(.white).lineLimit(1)
+                            Text(rec.artist).font(Theme.courier(11)).foregroundStyle(.white.opacity(0.80)).lineLimit(1)
+                        }
+                        .padding(10)
+                        Spacer()
                     }
-                    .padding(10)
+                }
+
+                // Top-right: flip button
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
+                                flippedIds = flippedIds.union([rec.id])
+                            }
+                        } label: {
+                            Image(systemName: "hand.thumbsup.fill")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 26, height: 26)
+                                .background(.black.opacity(0.45))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(8)
+                    }
+                    Spacer()
                 }
             }
-            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .onTapGesture { selectedSuggestion = rec }
 
-            // ── Meta row + quick-add heart ────────────────────────────────
+            // Meta row
             HStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 3) {
                     if !rec.year.isEmpty {
-                        Text(rec.year)
-                            .font(Theme.courier(10))
-                            .foregroundStyle(Theme.textT)
+                        Text(rec.year).font(Theme.courier(10)).foregroundStyle(Theme.textT)
                     }
                     if !rec.genre.isEmpty {
-                        Text(rec.genre)
-                            .font(Theme.courier(10, .semibold))
-                            .foregroundStyle(Theme.textS)
-                            .lineLimit(1)
+                        Text(rec.genre).font(Theme.courier(10, .semibold)).foregroundStyle(Theme.textS).lineLimit(1)
                     }
                 }
                 Spacer()
-
                 if alreadyAdded {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(.green)
+                    Image(systemName: "checkmark.circle.fill").font(.system(size: 22)).foregroundStyle(.green)
                 } else {
-                    Button {
-                        addToWishlist(rec)
-                    } label: {
-                        Image(systemName: "heart.badge.plus")
-                            .font(.system(size: 20))
-                            .foregroundStyle(settings.accentColor)
+                    Button { addToWishlist(rec) } label: {
+                        Image(systemName: "heart.badge.plus").font(.system(size: 20)).foregroundStyle(settings.accentColor)
                     }
                     .buttonStyle(.plain)
                 }
@@ -336,33 +326,113 @@ struct SuggestionsView: View {
             .padding(.horizontal, 10).padding(.vertical, 8)
             .background(settings.bg1)
 
-            // ── Provider badge ────────────────────────────────────────────
             providerBadge(rec.provider)
         }
         .background(settings.bg2)
         .clipShape(RoundedRectangle(cornerRadius: Theme.cardR))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.cardR)
-                .stroke(alreadyAdded ? Color.green.opacity(0.4) : Color.clear, lineWidth: 1.5)
-        )
     }
+
+    // MARK: – Card back (rating)
+
+    @ViewBuilder
+    private func cardBack(_ rec: SuggestedRecord) -> some View {
+        VStack(spacing: 0) {
+            // Info area matching the cover square
+            ZStack {
+                settings.bg3
+                VStack(spacing: 8) {
+                    Image(systemName: "star.bubble.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(settings.accentColor.opacity(0.6))
+                    Text(rec.album)
+                        .font(Theme.courier(14, .bold)).foregroundStyle(Theme.textP)
+                        .lineLimit(2).multilineTextAlignment(.center)
+                    Text(rec.artist)
+                        .font(Theme.courier(11)).foregroundStyle(Theme.textT).lineLimit(1)
+                    Text("Rate this suggestion")
+                        .font(Theme.courier(10)).foregroundStyle(Theme.textT)
+                        .padding(.top, 4)
+                }
+                .padding(14)
+            }
+            .frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
+
+            // Thumbs row
+            HStack(spacing: 0) {
+                // Thumbs UP
+                Button {
+                    store.send(.thumbsUp(rec))
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) { flippedIds = flippedIds.subtracting([rec.id]) }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "hand.thumbsup.fill").font(.system(size: 22))
+                        Text("MORE LIKE THIS").font(Theme.courier(7, .bold)).lineLimit(1)
+                    }
+                    .foregroundStyle(Color(hex: "#34C759"))
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    .background(Color(hex: "#34C759").opacity(0.12))
+                }
+                .buttonStyle(.plain)
+
+                Rectangle().fill(Theme.divide).frame(width: 1, height: 40)
+
+                // Thumbs DOWN
+                Button {
+                    store.send(.thumbsDown(rec))
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) { flippedIds = flippedIds.subtracting([rec.id]) }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "hand.thumbsdown.fill").font(.system(size: 22))
+                        Text("LESS LIKE THIS").font(Theme.courier(7, .bold)).lineLimit(1)
+                    }
+                    .foregroundStyle(Color(hex: "#FF3B30"))
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    .background(Color(hex: "#FF3B30").opacity(0.12))
+                }
+                .buttonStyle(.plain)
+            }
+            .background(settings.bg1)
+
+            // Bottom badge + flip-back button
+            HStack {
+                Spacer()
+                HStack(spacing: 4) {
+                    Image(systemName: rec.provider.icon).font(.system(size: 9))
+                    Text(rec.provider.displayName.uppercased()).font(Theme.courier(8, .semibold))
+                }
+                .foregroundStyle(Theme.textT)
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) { flippedIds = flippedIds.subtracting([rec.id]) }
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Theme.textT)
+                        .padding(.trailing, 10)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.vertical, 5)
+            .background(settings.bg1)
+        }
+        .background(settings.bg2)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.cardR))
+    }
+
+    // MARK: – Cover image
 
     @ViewBuilder
     private func coverImage(for rec: SuggestedRecord) -> some View {
-        if rec.coverURL.isEmpty {
-            ZStack {
-                settings.bg3
-                VinylView(color: Record.randomColor()).padding(28)
-            }
+        // Prefer cover_image (higher-res) over thumb
+        let url = rec.coverImageURL.isEmpty ? rec.coverURL : rec.coverImageURL
+        if url.isEmpty {
+            ZStack { settings.bg3; VinylView(color: Record.randomColor()).padding(28) }
         } else {
-            AsyncImage(url: URL(string: rec.coverURL)) { phase in
+            AsyncImage(url: URL(string: url)) { phase in
                 switch phase {
-                case .success(let img):
-                    img.resizable().scaledToFill()
-                case .failure:
-                    ZStack { settings.bg3; VinylView(color: Record.randomColor()).padding(28) }
-                default:
-                    ZStack { settings.bg3; ProgressView().tint(settings.accentColor) }
+                case .success(let img): img.resizable().scaledToFill()
+                case .failure: ZStack { settings.bg3; VinylView(color: Record.randomColor()).padding(28) }
+                default: ZStack { settings.bg3; ProgressView().tint(settings.accentColor) }
                 }
             }
         }
@@ -374,46 +444,35 @@ struct SuggestionsView: View {
             Text(provider.displayName.uppercased()).font(Theme.courier(8, .semibold))
         }
         .foregroundStyle(Theme.textT)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity).padding(.vertical, 5)
         .background(settings.bg1)
     }
 
-    // MARK: – Add to wishlist (quick-add from grid)
+    // MARK: – Add to wishlist
 
     private func addToWishlist(_ suggestion: SuggestedRecord) {
         let record = Record(
-            artist:    suggestion.artist,
-            album:     suggestion.album,
-            year:      suggestion.year,
-            genre:     suggestion.genre,
-            label:     "",
-            format:    suggestion.vinylFormat,
-            country:   "",
-            notes:     "",
-            condition: "VG",
-            isWishlist: true
+            artist: suggestion.artist, album: suggestion.album,
+            year: suggestion.year, genre: suggestion.genre,
+            label: "", format: suggestion.vinylFormat,
+            country: "", notes: "", condition: "VG", isWishlist: true
         )
         record.discogsId = suggestion.discogsId > 0 ? suggestion.discogsId : nil
-        record.coverURL  = suggestion.coverURL
+        record.coverURL  = suggestion.coverImageURL.isEmpty ? suggestion.coverURL : suggestion.coverImageURL
         ctx.insert(record)
 
-        // Fetch and cache cover art asynchronously
-        if !suggestion.coverURL.isEmpty {
+        if !record.coverURL.isEmpty {
             Task {
-                guard let url = URL(string: suggestion.coverURL),
+                guard let url = URL(string: record.coverURL),
                       let (data, _) = try? await URLSession.shared.data(from: url)
                 else { return }
                 await MainActor.run { record.coverData = data }
             }
         }
-
-        _ = withAnimation(.spring(response: 0.3)) {
-            addedIds.insert(suggestion.id)
-        }
+        _ = withAnimation(.spring(response: 0.3)) { addedIds.insert(suggestion.id) }
     }
 
-    // MARK: – Spotify PKCE Auth
+    // MARK: – Spotify PKCE auth
 
     private func startSpotifyAuth() {
         guard !kSpotifyClientId.isEmpty else {
@@ -427,31 +486,23 @@ struct SuggestionsView: View {
         pkceVerifier  = verifier
 
         let redirectURI = "vinco-app://spotify"
-        guard let encodedURI = redirectURI.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+        guard let enc = redirectURI.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let authURL = URL(string:
-                "https://accounts.spotify.com/authorize" +
-                "?client_id=\(kSpotifyClientId)" +
-                "&response_type=code" +
-                "&redirect_uri=\(encodedURI)" +
-                "&code_challenge=\(challenge)" +
-                "&code_challenge_method=S256" +
-                "&scope=user-top-read")
+                "https://accounts.spotify.com/authorize?client_id=\(kSpotifyClientId)" +
+                "&response_type=code&redirect_uri=\(enc)" +
+                "&code_challenge=\(challenge)&code_challenge_method=S256&scope=user-top-read")
         else { return }
 
         isAuthenticatingSpotify = true
 
-        let session = ASWebAuthenticationSession(
-            url: authURL,
-            callbackURLScheme: "vinco-app"
-        ) { callbackURL, error in
+        let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: "vinco-app") { callbackURL, error in
             isAuthenticatingSpotify = false
-            if let error = error as? ASWebAuthenticationSessionError,
-               error.code == .canceledLogin { return }
+            if let e = error as? ASWebAuthenticationSessionError, e.code == .canceledLogin { return }
             guard let callbackURL,
-                  let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
-                  let code = components.queryItems?.first(where: { $0.name == "code" })?.value
+                  let comps = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+                  let code = comps.queryItems?.first(where: { $0.name == "code" })?.value
             else {
-                spotifyAuthError = "Spotify login failed. Make sure 'vinco-app://spotify' is registered as a redirect URI."
+                spotifyAuthError = "Spotify login failed. Ensure 'vinco-app://spotify' is a registered redirect URI."
                 return
             }
             Task { await exchangeSpotifyCode(code: code, verifier: verifier) }
@@ -463,46 +514,30 @@ struct SuggestionsView: View {
 
     private func exchangeSpotifyCode(code: String, verifier: String) async {
         guard let url = URL(string: "https://accounts.spotify.com/api/token") else { return }
-
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        let redirectURI = "vinco-app://spotify"
-        let body = [
-            "client_id=\(kSpotifyClientId)",
-            "grant_type=authorization_code",
-            "code=\(code)",
-            "redirect_uri=\(redirectURI)",
-            "code_verifier=\(verifier)"
-        ].joined(separator: "&")
+        let body = ["client_id=\(kSpotifyClientId)", "grant_type=authorization_code",
+                    "code=\(code)", "redirect_uri=vinco-app://spotify", "code_verifier=\(verifier)"].joined(separator: "&")
         req.httpBody = body.data(using: .utf8)
-
         do {
             let (data, _) = try await URLSession.shared.data(for: req)
             let resp = try JSONDecoder().decode(SpotifyTokenResp.self, from: data)
             UserDefaults.standard.set(resp.access_token, forKey: "rb_sp_token")
-            let expiry = Date().timeIntervalSince1970 + Double(resp.expires_in)
-            UserDefaults.standard.set(expiry, forKey: "rb_sp_expiry")
-            if let rt = resp.refresh_token {
-                UserDefaults.standard.set(rt, forKey: "rb_sp_refresh")
-            }
+            UserDefaults.standard.set(Date().timeIntervalSince1970 + Double(resp.expires_in), forKey: "rb_sp_expiry")
+            if let rt = resp.refresh_token { UserDefaults.standard.set(rt, forKey: "rb_sp_refresh") }
             await MainActor.run {
                 store.send(.spotifyTokenSaved)
                 if !store.enabledProviders.contains(.spotify) {
-                    store.send(.providerToggled(.spotify,
-                        genres: topGenres, artists: topArtists, excluded: excludedKeys))
+                    store.send(.providerToggled(.spotify, genres: topGenres, artists: topArtists, excluded: excludedKeys))
                 } else {
                     store.send(.refreshTapped(genres: topGenres, artists: topArtists, excluded: excludedKeys))
                 }
             }
         } catch {
-            await MainActor.run {
-                spotifyAuthError = "Token exchange failed. Please try again."
-            }
+            await MainActor.run { spotifyAuthError = "Token exchange failed. Please try again." }
         }
     }
-
-    // MARK: – PKCE helpers
 
     private func generatePKCEVerifier() -> String {
         let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
@@ -510,8 +545,7 @@ struct SuggestionsView: View {
     }
 
     private func generatePKCEChallenge(from verifier: String) -> String {
-        let data   = Data(verifier.utf8)
-        let digest = SHA256.hash(data: data)
+        let digest = SHA256.hash(data: Data(verifier.utf8))
         return Data(digest).base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
@@ -519,31 +553,22 @@ struct SuggestionsView: View {
     }
 }
 
-// MARK: – Spotify ASWebAuthenticationSession presentation context
+// MARK: – Spotify auth presenter
 
 private final class SpotifyAuthPresenter: NSObject, ASWebAuthenticationPresentationContextProviding, @unchecked Sendable {
     static let shared = SpotifyAuthPresenter()
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let active = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
-        if let active {
-            return ASPresentationAnchor(windowScene: active)
-        }
-        // Last resort: find any key window (unreachable in practice on iOS 13+)
-        return UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first(where: { $0.isKeyWindow })
-        ?? UIWindow(frame: .zero)
+        let target = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
+        if let target { return ASPresentationAnchor(windowScene: target) }
+        return scenes.flatMap(\.windows).first(where: \.isKeyWindow)
+            ?? scenes.flatMap(\.windows).first
+            ?? UIWindow(frame: .zero)
     }
 }
 
-// MARK: – Spotify token response
-
 private nonisolated struct SpotifyTokenResp: Decodable {
-    let access_token:  String
-    let expires_in:    Int
-    let refresh_token: String?
+    let access_token: String; let expires_in: Int; let refresh_token: String?
 }
 
 // MARK: – Suggestion detail sheet
@@ -558,162 +583,256 @@ struct SuggestionDetailSheet: View {
 
     @Query private var allRecords: [Record]
 
-    private var alreadyAdded: Bool {
+    @State private var releaseDetail:    DiscogsReleaseDetail? = nil
+    @State private var isLoadingDetail:  Bool                  = false
+
+    // Already in collection or wishlist
+    private var alreadyHave: Bool {
         allRecords.contains {
             $0.artist.lowercased() == suggestion.artist.lowercased() &&
-            $0.album.lowercased()  == suggestion.album.lowercased()  &&
-            ($0.isWishlist || !$0.isWishlist) // either collection OR wishlist counts as "have it"
+            $0.album.lowercased()  == suggestion.album.lowercased()
         }
+    }
+
+    // Best cover: release detail > cover_image > thumb
+    private var bestCoverURL: String {
+        if let d = releaseDetail, !d.coverImageURL.isEmpty { return d.coverImageURL }
+        if !suggestion.coverImageURL.isEmpty { return suggestion.coverImageURL }
+        return suggestion.coverURL
     }
 
     var body: some View {
-        NavigationStack {
+        ZStack(alignment: .topLeading) {
             ScrollView {
                 VStack(spacing: 0) {
                     coverSection
-                    infoSection
+                    headerSection
+                    metaSection
+                    if isLoadingDetail {
+                        ProgressView().tint(settings.accentColor).padding(.vertical, 24)
+                    } else if let detail = releaseDetail {
+                        if !detail.labels.isEmpty || !detail.country.isEmpty {
+                            detailInfoSection(detail)
+                        }
+                        if detail.communityHave > 0 || detail.communityWant > 0 || detail.lowestPrice != nil {
+                            marketSection(detail)
+                        }
+                        if !detail.tracklist.isEmpty {
+                            tracklistSection(detail.tracklist)
+                        }
+                    }
+                    ctaSection
                 }
-                .padding(.bottom, 32)
+                .padding(.bottom, 40)
             }
             .scrollIndicators(.hidden)
             .background(settings.bg0.ignoresSafeArea())
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(settings.bg0, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    CloseButton()
-                }
+
+            // Floating close button — overlaid on cover, top-left
+            Button { dismiss() } label: {
+                Text("✕")
+                    .font(Theme.courier(15))
+                    .foregroundStyle(.white)
+                    .padding(12)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
+        .task { await loadReleaseDetail() }
     }
 
-    // MARK: – Cover section
+    // MARK: Cover
 
     private var coverSection: some View {
         ZStack(alignment: .bottom) {
-            // Cover image
             Group {
-                if suggestion.coverURL.isEmpty {
-                    ZStack {
-                        settings.bg2
-                        VinylView(color: Record.randomColor()).padding(50)
-                    }
+                if bestCoverURL.isEmpty {
+                    ZStack { settings.bg2; VinylView(color: Record.randomColor()).padding(50) }
                 } else {
-                    AsyncImage(url: URL(string: suggestion.coverURL)) { phase in
+                    AsyncImage(url: URL(string: bestCoverURL)) { phase in
                         switch phase {
                         case .success(let img): img.resizable().scaledToFill()
-                        case .failure:
-                            ZStack { settings.bg2; VinylView(color: Record.randomColor()).padding(50) }
-                        default:
-                            ZStack { settings.bg2; ProgressView().tint(settings.accentColor) }
+                        case .failure: ZStack { settings.bg2; VinylView(color: Record.randomColor()).padding(50) }
+                        default: ZStack { settings.bg2; ProgressView().tint(settings.accentColor) }
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
-            .aspectRatio(1, contentMode: .fit)
-            .clipped()
+            .frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit).clipped()
 
-            // Gradient fade into background at bottom
-            LinearGradient(
-                colors: [.clear, settings.bg0],
-                startPoint: .center, endPoint: .bottom)
+            LinearGradient(colors: [.clear, settings.bg0], startPoint: .center, endPoint: .bottom)
                 .frame(height: 140)
         }
     }
 
-    // MARK: – Info section
+    // MARK: Header (artist / album)
 
-    private var infoSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(suggestion.artist.uppercased())
+                .font(Theme.courier(11, .semibold)).foregroundStyle(Theme.textT).tracking(1)
+            Text(suggestion.album)
+                .font(Theme.courier(22, .bold)).foregroundStyle(Theme.textP)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 20).padding(.top, 4).padding(.bottom, 14)
+    }
 
-            // Artist & Album
-            VStack(alignment: .leading, spacing: 4) {
-                Text(suggestion.artist.uppercased())
-                    .font(Theme.courier(11, .semibold))
-                    .foregroundStyle(Theme.textT)
-                    .tracking(1)
-                Text(suggestion.album)
-                    .font(Theme.courier(22, .bold))
-                    .foregroundStyle(Theme.textP)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
-            .padding(.bottom, 16)
+    // MARK: Meta pills (year / genre / format)
 
-            // Meta pills
+    private var metaSection: some View {
+        VStack(spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    if !suggestion.year.isEmpty {
-                        metaPill(suggestion.year, icon: "calendar")
-                    }
-                    if !suggestion.genre.isEmpty {
-                        metaPill(suggestion.genre, icon: "music.note")
-                    }
+                    if !suggestion.year.isEmpty     { metaPill(suggestion.year,        icon: "calendar") }
+                    if !suggestion.genre.isEmpty    { metaPill(suggestion.genre,       icon: "music.note") }
                     metaPill(suggestion.vinylFormat, icon: "opticaldisc")
+                    // Styles from release detail
+                    if let detail = releaseDetail {
+                        ForEach(detail.styles.prefix(2), id: \.self) { metaPill($0, icon: "tag") }
+                    }
                 }
                 .padding(.horizontal, 20)
             }
-            .padding(.bottom, 20)
-
-            // Divider
-            Rectangle().fill(Theme.divide).frame(height: 1).padding(.horizontal, 20)
 
             // Provider row
-            HStack(spacing: 8) {
-                Image(systemName: suggestion.provider.icon)
-                    .font(.system(size: 12))
-                Text("Suggested via \(suggestion.provider.displayName)")
-                    .font(Theme.courier(13))
+            HStack(spacing: 6) {
+                Image(systemName: suggestion.provider.icon).font(.system(size: 12))
+                Text("Suggested via \(suggestion.provider.displayName)").font(Theme.courier(13))
             }
             .foregroundStyle(Theme.textT)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
-            .padding(.vertical, 14)
 
             Rectangle().fill(Theme.divide).frame(height: 1).padding(.horizontal, 20)
+        }
+        .padding(.bottom, 4)
+    }
 
-            // CTA — Add to Wishlist or Already Added
-            if alreadyAdded {
+    // MARK: Label / country row
+
+    private func detailInfoSection(_ detail: DiscogsReleaseDetail) -> some View {
+        VStack(spacing: 0) {
+            if !detail.labels.isEmpty {
+                infoRow(label: "LABEL", value: detail.labels.prefix(2).joined(separator: " · "))
+            }
+            if !detail.country.isEmpty {
+                infoRow(label: "COUNTRY", value: detail.country)
+            }
+            Rectangle().fill(Theme.divide).frame(height: 1).padding(.horizontal, 20).padding(.top, 4)
+        }
+    }
+
+    private func infoRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label).font(Theme.courier(10, .semibold)).foregroundStyle(Theme.textT).tracking(1).frame(width: 68, alignment: .leading)
+            Text(value).font(Theme.courier(13)).foregroundStyle(Theme.textP).lineLimit(1)
+            Spacer()
+        }
+        .padding(.horizontal, 20).padding(.vertical, 8)
+    }
+
+    // MARK: Market stats
+
+    private func marketSection(_ detail: DiscogsReleaseDetail) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("DISCOGS MARKET").font(Theme.courier(10, .semibold)).foregroundStyle(Theme.textT)
+                .tracking(1).padding(.horizontal, 20).padding(.top, 14)
+
+            HStack(spacing: 0) {
+                if let price = detail.lowestPrice, price > 0 {
+                    marketBadge(label: "FROM", value: String(format: "%.2f %@", price, UserDefaults.standard.string(forKey: "rb_currency") ?? ""))
+                }
+                if detail.communityHave > 0 {
+                    marketBadge(label: "HAVE", value: "\(detail.communityHave)")
+                }
+                if detail.communityWant > 0 {
+                    marketBadge(label: "WANT", value: "\(detail.communityWant)")
+                }
+                if let rating = detail.rating, detail.ratingCount > 0 {
+                    marketBadge(label: "RATING", value: String(format: "%.1f (%d)", rating, detail.ratingCount))
+                }
+            }
+            .padding(.horizontal, 20)
+
+            Rectangle().fill(Theme.divide).frame(height: 1).padding(.horizontal, 20).padding(.top, 4)
+        }
+    }
+
+    private func marketBadge(label: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(label).font(Theme.courier(8, .semibold)).foregroundStyle(Theme.textT)
+            Text(value).font(Theme.courier(12, .bold)).foregroundStyle(Theme.textP).lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .background(settings.bg2)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.trailing, 6)
+    }
+
+    // MARK: Tracklist
+
+    private func tracklistSection(_ tracks: [DiscogsTrack]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("TRACKLIST").font(Theme.courier(10, .semibold)).foregroundStyle(Theme.textT)
+                .tracking(1).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 6)
+
+            ForEach(tracks) { track in
                 HStack(spacing: 10) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                    Text("Already in your collection or wishlist")
-                        .font(Theme.courier(14, .semibold))
+                    Text(track.position.isEmpty ? "•" : track.position)
+                        .font(Theme.courier(11)).foregroundStyle(Theme.textT)
+                        .frame(width: 28, alignment: .trailing)
+                    Text(track.title)
+                        .font(Theme.courier(13)).foregroundStyle(Theme.textP).lineLimit(1)
+                    Spacer()
+                    if !track.duration.isEmpty {
+                        Text(track.duration).font(Theme.courier(11)).foregroundStyle(Theme.textT)
+                    }
+                }
+                .padding(.horizontal, 20).padding(.vertical, 6)
+                Rectangle().fill(Theme.divide.opacity(0.5)).frame(height: 1).padding(.horizontal, 20)
+            }
+        }
+        .padding(.bottom, 4)
+    }
+
+    // MARK: CTA
+
+    private var ctaSection: some View {
+        Group {
+            if alreadyHave {
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.circle.fill").font(.system(size: 20))
+                    Text("Already in your collection or wishlist").font(Theme.courier(14, .semibold))
                 }
                 .foregroundStyle(.green)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
+                .frame(maxWidth: .infinity).padding(.vertical, 18)
                 .background(Color.green.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 14))
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.horizontal, 20).padding(.top, 20)
             } else {
                 Button {
                     onAdd()
                     dismiss()
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "heart.badge.plus")
-                            .font(.system(size: 18, weight: .semibold))
-                        Text("Add to Wishlist")
-                            .font(Theme.courier(16, .semibold))
+                        Image(systemName: "heart.badge.plus").font(.system(size: 18, weight: .semibold))
+                        Text("Add to Wishlist").font(Theme.courier(16, .semibold))
                     }
                     .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
+                    .frame(maxWidth: .infinity).padding(.vertical, 18)
                     .background(settings.accentColor)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .shadow(color: settings.accentColor.opacity(0.35), radius: 8, x: 0, y: 4)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.horizontal, 20).padding(.top, 20)
             }
         }
     }
+
+    // MARK: Helpers
 
     private func metaPill(_ text: String, icon: String) -> some View {
         HStack(spacing: 4) {
@@ -722,7 +841,14 @@ struct SuggestionDetailSheet: View {
         }
         .foregroundStyle(Theme.textS)
         .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(settings.bg2)
-        .clipShape(Capsule())
+        .background(settings.bg2).clipShape(Capsule())
+    }
+
+    private func loadReleaseDetail() async {
+        guard suggestion.discogsId > 0, releaseDetail == nil else { return }
+        isLoadingDetail = true
+        let token = UserDefaults.standard.string(forKey: "rb_discogs") ?? ""
+        releaseDetail = await fetchDiscogsRelease(id: suggestion.discogsId, token: token)
+        isLoadingDetail = false
     }
 }

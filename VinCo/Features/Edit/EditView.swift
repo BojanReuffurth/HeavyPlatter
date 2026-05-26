@@ -18,7 +18,25 @@ struct EditView: View {
     @State private var photoItem: PhotosPickerItem? = nil
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Custom header — plain buttons, Courier New title, no iOS 26 glass
+            HStack(spacing: 12) {
+                Button { dismiss() } label: {
+                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+                }.buttonStyle(.plain)
+                Text(store.isEditing ? "Edit Record" : "Add Record")
+                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
+                Spacer()
+                Button(store.isEditing ? "Save" : "Add") { save() }
+                    .font(Theme.courier(14, .semibold))
+                    .foregroundStyle(store.canSave ? settings.accentColor : Theme.textT)
+                    .disabled(!store.canSave)
+                    .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(settings.bg1)
+            Rectangle().fill(Theme.divide).frame(height: 1)
+
             ScrollView {
                 VStack(spacing: 20) {
                     if !store.isEditing { scanBlock }
@@ -31,27 +49,11 @@ struct EditView: View {
                 }
                 .padding(16).padding(.bottom, 40)
             }
-            .background(settings.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(store.isEditing ? "Edit Record" : "Add Record")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(settings.bg1, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: {
-                        Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-                    }.buttonStyle(.plain)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(store.isEditing ? "Save" : "Add") { save() }
-                        .font(Theme.courier(14, .semibold))
-                        .foregroundStyle(store.canSave ? settings.accentColor : Theme.textT)
-                        .disabled(!store.canSave)
-                }
-            }
-            .onAppear { store.send(.appeared) }
         }
+        .background(settings.bg0.ignoresSafeArea())
+        .onAppear { store.send(.appeared) }
         // Condition grading guide
         .sheet(isPresented: $showConditionGuide) {
             ConditionGuideView()

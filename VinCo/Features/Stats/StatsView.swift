@@ -8,6 +8,7 @@ struct StatsView: View {
     let store: StoreOf<StatsFeature>
     @Query private var all: [Record]
     @Environment(Settings.self) private var settings
+    @Environment(\.dismiss) private var dismiss
 
     private var col: [Record] { all.filter { !$0.isWishlist } }
     private var wl:  [Record] { all.filter {  $0.isWishlist } }
@@ -23,7 +24,30 @@ struct StatsView: View {
     private var value: Double { col.compactMap(\.currentValue).reduce(0,+) }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Custom header — close left, title centre, refresh right
+            HStack(spacing: 12) {
+                Button { dismiss() } label: {
+                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+                }.buttonStyle(.plain)
+                Text("Stats")
+                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
+                Spacer()
+                Button {
+                    guard !store.isRefreshing else { return }
+                    refreshAllPrices()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 15))
+                        .foregroundStyle(store.isRefreshing ? Theme.textT : settings.accentColor)
+                }
+                .buttonStyle(.plain)
+                .disabled(store.isRefreshing)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(settings.bg1)
+            Rectangle().fill(Theme.divide).frame(height: 1)
+
             ScrollView {
                 VStack(spacing: 20) {
                     if let msg = store.refreshMsg {
@@ -43,29 +67,10 @@ struct StatsView: View {
                 }
                 .padding(16).padding(.bottom, 32)
             }
-            .background(settings.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("Stats")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(settings.bg1, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        guard !store.isRefreshing else { return }
-                        refreshAllPrices()
-                    } label: {
-                        Image(systemName: "arrow.clockwise.circle")
-                            .font(.system(size: 18))
-                            .foregroundStyle(store.isRefreshing ? Theme.textT : settings.accentColor)
-                    }
-                    .disabled(store.isRefreshing)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    CloseButton()
-                }
-            }
         }
+        .background(settings.bg0.ignoresSafeArea())
     }
 
     private func refreshAllPrices() {

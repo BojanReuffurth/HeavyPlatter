@@ -6,7 +6,8 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Bindable var store: StoreOf<SettingsFeature>
     @Environment(\.modelContext) private var ctx
-    @Environment(Settings.self) private var settings
+    @Environment(Settings.self)  private var settings
+    @Environment(\.dismiss)      private var dismiss
     @Query private var all: [Record]
 
     // MARK: – Transient UI state
@@ -18,37 +19,38 @@ struct SettingsView: View {
     @State private var autoBackupMsg: String? = nil
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                tabBar
-                Rectangle().fill(Theme.divide).frame(height: 1)
-                ScrollView {
-                    VStack(spacing: 20) {
-                        switch store.tab {
-                        case .look:    lookTab
-                        case .genres:  genresTab
-                        case .backup:  backupTab
-                        case .connect: connectTab
-                        case .tools:   toolsTab
-                        }
+        VStack(spacing: 0) {
+            // Custom header — close left, title, no chrome
+            HStack(spacing: 12) {
+                Button { dismiss() } label: {
+                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+                }.buttonStyle(.plain)
+                Text("Settings")
+                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
+                Spacer()
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(settings.bg1)
+            Rectangle().fill(Theme.divide).frame(height: 1)
+            tabBar
+            Rectangle().fill(Theme.divide).frame(height: 1)
+            ScrollView {
+                VStack(spacing: 20) {
+                    switch store.tab {
+                    case .look:    lookTab
+                    case .genres:  genresTab
+                    case .backup:  backupTab
+                    case .connect: connectTab
+                    case .tools:   toolsTab
                     }
-                    .padding(16).padding(.bottom, 40)
-                    .animation(.easeInOut(duration: 0.15), value: store.tab)
                 }
-                .scrollIndicators(.hidden)
-                .scrollDismissesKeyboard(.interactively)
+                .padding(16).padding(.bottom, 40)
+                .animation(.easeInOut(duration: 0.15), value: store.tab)
             }
-            .background(settings.bg0.ignoresSafeArea())
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(settings.bg1, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    CloseButton()
-                }
-            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
         }
+        .background(settings.bg0.ignoresSafeArea())
         .fileImporter(
             isPresented: $showImporter,
             allowedContentTypes: [.json, .commaSeparatedText, .text],

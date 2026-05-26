@@ -14,7 +14,36 @@ struct DetailView: View {
     var rec: Record { store.record }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Custom header — no iOS 26 toolbar glass treatment
+            HStack(spacing: 12) {
+                Button { dismiss() } label: {
+                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+                }.buttonStyle(.plain)
+                Spacer()
+                Menu {
+                    Button { store.send(.editTapped)  } label: { Label("Edit", systemImage: "pencil") }
+                    if rec.isWishlist {
+                        Button { showFindOnline = true } label: {
+                            Label("Find Online", systemImage: "cart.fill")
+                        }
+                    }
+                    Button { store.send(.moveTapped) } label: {
+                        Label(rec.isWishlist ? "Move to Collection" : "Move to Wishlist",
+                              systemImage: rec.isWishlist ? "square.stack.3d.up" : "heart")
+                    }
+                    Divider()
+                    Button(role: .destructive) { store.send(.deleteTapped) } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis").foregroundStyle(settings.accentColor)
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(settings.bg1)
+            Rectangle().fill(Theme.divide).frame(height: 1)
+
             ScrollView {
                 VStack(spacing: 0) {
                     coverHeader
@@ -24,30 +53,26 @@ struct DetailView: View {
                     trackBody
                 }
             }
-            .background(settings.bg0.ignoresSafeArea()).scrollIndicators(.hidden)
+            .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("").navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(settings.bg1, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar { navBar }
-            .sheet(item: $store.scope(state: \.edit, action: \.edit)) { s in
-                EditView(store: s)
-                    .preferredColorScheme(settings.preferredScheme)
-                    .fontDesign(.monospaced)
-            }
-            .fullScreenCover(isPresented: $store.showFullArt) { fullArt }
-            .confirmationDialog("Delete \"\(rec.album)\"?", isPresented: $store.showDeleteAlert, titleVisibility: .visible) {
-                Button("Delete", role: .destructive) { ctx.delete(rec); dismiss() }
-            }
-            .sheet(isPresented: $showFindOnline) {
-                FindOnlineView(record: rec)
-                    .environment(settings)
-            }
-            .sheet(isPresented: $showConditionGuide) {
-                ConditionGuideView()
-                    .environment(settings)
-                    .presentationDetents([.medium, .large])
-            }
+        }
+        .background(settings.bg0.ignoresSafeArea())
+        .sheet(item: $store.scope(state: \.edit, action: \.edit)) { s in
+            EditView(store: s)
+                .preferredColorScheme(settings.preferredScheme)
+                .fontDesign(.monospaced)
+        }
+        .fullScreenCover(isPresented: $store.showFullArt) { fullArt }
+        .confirmationDialog("Delete \"\(rec.album)\"?", isPresented: $store.showDeleteAlert, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) { ctx.delete(rec); dismiss() }
+        }
+        .sheet(isPresented: $showFindOnline) {
+            FindOnlineView(record: rec).environment(settings)
+        }
+        .sheet(isPresented: $showConditionGuide) {
+            ConditionGuideView()
+                .environment(settings)
+                .presentationDetents([.medium, .large])
         }
         .onDisappear { audio.stop() }
     }
@@ -183,32 +208,6 @@ struct DetailView: View {
         .onTapGesture { store.showFullArt = false }
     }
 
-    @ToolbarContentBuilder
-    private var navBar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button { dismiss() } label: {
-                Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
-            }.buttonStyle(.plain)
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Button { store.send(.editTapped)  } label: { Label("Edit", systemImage: "pencil") }
-                if rec.isWishlist {
-                    Button { showFindOnline = true } label: {
-                        Label("Find Online", systemImage: "cart.fill")
-                    }
-                }
-                Button { store.send(.moveTapped)  } label: {
-                    Label(rec.isWishlist ? "Move to Collection" : "Move to Wishlist",
-                          systemImage: rec.isWishlist ? "square.stack.3d.up" : "heart")
-                }
-                Divider()
-                Button(role: .destructive) { store.send(.deleteTapped) } label: { Label("Delete", systemImage: "trash") }
-            } label: {
-                Image(systemName: "ellipsis.circle").foregroundStyle(settings.accentColor)
-            }
-        }
-    }
 }
 
 struct TrackRow: View {

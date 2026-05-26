@@ -100,7 +100,18 @@ struct ConditionGuideView: View {
     ]
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Button { dismiss() } label: {
+                    Text("✕").font(Theme.courier(15)).foregroundStyle(Theme.textT)
+                }.buttonStyle(.plain)
+                Text("Condition Guide")
+                    .font(Theme.courier(17, .semibold)).foregroundStyle(Theme.textP)
+                Spacer()
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(settings.bg1)
+            Rectangle().fill(Theme.divide).frame(height: 1)
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(grades, id: \.0) { grade, label, desc in
@@ -123,12 +134,8 @@ struct ConditionGuideView: View {
                 }
                 .padding(.top, 8)
             }
+            .scrollIndicators(.hidden)
             .background(settings.bg0.ignoresSafeArea())
-            .navigationTitle("Condition Guide")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(settings.bg1, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { CloseButton() } }
         }
     }
 }
