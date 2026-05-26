@@ -37,7 +37,9 @@ struct AppView: View {
                 .preferredColorScheme(settings.preferredScheme)
                 .environment(\.font, Theme.courier(14))
         }
-        .sheet(isPresented: $showSettings) {
+        .sheet(isPresented: $showSettings, onDismiss: {
+            store.send(.settings(.tabSelected(.look)))
+        }) {
             SettingsView(store: store.scope(state: \.settings, action: \.settings))
                 .preferredColorScheme(settings.preferredScheme)
                 .environment(\.font, Theme.courier(14))
